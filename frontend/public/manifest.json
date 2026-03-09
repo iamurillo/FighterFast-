@@ -1,4 +1,5 @@
 {
+    "id": "fighterfast-pwa-v1",
     "name": "FighterFast",
     "short_name": "FighterFast",
     "description": "App para gestionar ayunos, macros y entrenamientos, con Modo Peleador.",
@@ -10,27 +11,36 @@
     "icons": [
         {
             "src": "/icon-192x192.png",
-            "sizes": "192x192",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "any"
         },
         {
             "src": "/icon-maskable-192x192.png",
-            "sizes": "192x192",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
             "src": "/icon-512x512.png",
-            "sizes": "512x512",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "any"
         },
         {
             "src": "/icon-maskable-512x512.png",
-            "sizes": "512x512",
+            "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-1.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Dashboard de FighterFast"
         }
     ]
 }
