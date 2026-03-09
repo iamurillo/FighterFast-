@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Star, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function ToolsPage() {
-    const [activeTab, setActiveTab] = useState<'diary' | 'calculator' | 'timer'>('diary');
+    const [activeTab, setActiveTab] = useState<'diary' | 'techniques' | 'timer' | 'calculator'>('diary');
     const [user, setUser] = useState<any>(null);
 
     // --- DIARY STATE ---
@@ -13,6 +13,14 @@ export default function ToolsPage() {
     const [showDiaryForm, setShowDiaryForm] = useState(false);
     const [discipline, setDiscipline] = useState('Jiu-Jitsu / Grappling');
     const [notes, setNotes] = useState('');
+
+    // --- TECHNIQUES STATE (VAULT) ---
+    const [techniques, setTechniques] = useState<any[]>([]);
+    const [showTechForm, setShowTechForm] = useState(false);
+    const [techName, setTechName] = useState('');
+    const [techDesc, setTechDesc] = useState('');
+    const [techRating, setTechRating] = useState(3);
+    const [techDiscipline, setTechDiscipline] = useState('Guardia Cerrada');
 
     // --- CALCULATOR STATE ---
     const [currentWeight, setCurrentWeight] = useState('');
@@ -31,23 +39,55 @@ export default function ToolsPage() {
     const [prepTime, setPrepTime] = useState(10);
     const [isPrepping, setIsPrepping] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+    const [isEMOM, setIsEMOM] = useState(false);
+    const [isFocusMode, setIsFocusMode] = useState(false);
+
+    // AUDIO REFS
+    const bellRef = React.useRef<HTMLAudioElement>(null);
+    const warningRef = React.useRef<HTMLAudioElement>(null);
 
     const playSound = (type: 'bell' | 'warning' | 'prep') => {
         if (isMuted) return;
         try {
-            const bellUrl = 'https://actions.google.com/sounds/v1/sports/boxing_bell_mixed.ogg';
-            const beepUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
-            const audio = new Audio(type === 'bell' ? bellUrl : beepUrl);
-            audio.play().catch(() => { });
+            if (type === 'bell' && bellRef.current) {
+                bellRef.current.currentTime = 0;
+                bellRef.current.play().catch(() => { });
+            } else if (warningRef.current) {
+                warningRef.current.currentTime = 0;
+                warningRef.current.play().catch(() => { });
+            }
         } catch (e) { }
     };
+
+    // Load Timer Config
+    useEffect(() => {
+        const config = db.getTimerConfig();
+        if (config) {
+            setRoundTime(config.roundTime || 300);
+            setRestTime(config.restTime || 60);
+            setTotalRounds(config.totalRounds || 5);
+            setTimeLeft(config.roundTime || 300);
+        }
+    }, []);
+
+    // Save Timer Config
+    useEffect(() => {
+        db.setTimerConfig({ roundTime, restTime, totalRounds });
+    }, [roundTime, restTime, totalRounds]);
+
 
     useEffect(() => {
         let interval: any;
         if (timerActive && timeLeft > 0) {
             interval = setInterval(() => {
                 const nextTime = timeLeft - 1;
-                if (nextTime === 10 && !isResting && !isPrepping) playSound('warning');
+
+                // EMOM Logic: Bell every 60 seconds, no resting.
+                if (isEMOM && !isPrepping && nextTime > 0 && nextTime % 60 === 0) {
+                    playSound('bell');
+                }
+
+                if (nextTime === 10 && !isResting && !isPrepping && !isEMOM) playSound('warning');
                 if (nextTime === 3 && isPrepping) playSound('prep');
                 setTimeLeft(nextTime);
             }, 1000);
@@ -85,10 +125,18 @@ export default function ToolsPage() {
 
     const handleStartTimer = () => {
         if (!timerActive) {
-            if (timeLeft === roundTime) {
+            // Unlock audio for mobile browsers
+            if (bellRef.current && warningRef.current) {
+                bellRef.current.play().catch(() => { });
+                bellRef.current.pause();
+                warningRef.current.play().catch(() => { });
+                warningRef.current.pause();
+            }
+
+            if (timeLeft === roundTime && !isPrepping && !isResting) {
                 setIsPrepping(true);
                 setTimeLeft(10);
-                playSound('prep');
+                playSound('warning'); // Sound indicating prep start
             }
             setTimerActive(true);
         } else {
@@ -104,14 +152,16 @@ export default function ToolsPage() {
         setTimeLeft(roundTime);
     };
 
-    const setTimerMode = (type: 'BJJ' | 'MMA' | 'BOX') => {
+    const setTimerMode = (type: 'BJJ' | 'MMA' | 'BOX' | 'EMOM') => {
         setTimerActive(false);
         setIsResting(false);
         setIsPrepping(false);
         setCurrentRound(1);
+        setIsEMOM(false);
         if (type === 'BJJ') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(5); }
         if (type === 'MMA') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(3); }
         if (type === 'BOX') { setRoundTime(180); setTimeLeft(180); setRestTime(60); setTotalRounds(12); }
+        if (type === 'EMOM') { setIsEMOM(true); setRoundTime(600); setTimeLeft(600); setRestTime(0); setTotalRounds(1); } // 10 min continous
     };
 
     useEffect(() => {
@@ -122,6 +172,7 @@ export default function ToolsPage() {
             setTargetKgs(storedUser.target_weight?.toString() || '');
         }
         setLogs(db.getTrainingLogs().reverse()); // Mostrar recientes primero
+        setTechniques(db.getTechniques().reverse());
     }, []);
 
     const handleAddLog = (e: React.FormEvent) => {
@@ -131,6 +182,16 @@ export default function ToolsPage() {
         setLogs(db.getTrainingLogs().reverse());
         setNotes('');
         setShowDiaryForm(false);
+    };
+
+    const handleAddTechnique = (e: React.FormEvent) => {
+        e.preventDefault();
+        db.addTechnique(techName, techDesc, techDiscipline, techRating);
+        setTechniques(db.getTechniques().reverse());
+        setTechName('');
+        setTechDesc('');
+        setTechRating(3);
+        setShowTechForm(false);
     };
 
     const handleCalculateCut = (e: React.FormEvent) => {
@@ -170,8 +231,11 @@ export default function ToolsPage() {
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-            className="p-6 pb-24 max-w-md mx-auto"
+            className="p-6 pb-24 max-w-md mx-auto relative"
         >
+            <audio ref={bellRef} src="https://actions.google.com/sounds/v1/sports/boxing_bell_mixed.ogg" preload="auto" />
+            <audio ref={warningRef} src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto" />
+
             {/* Header */}
             <div className="flex justify-between items-center mb-8 pt-4">
                 <div>
@@ -180,20 +244,29 @@ export default function ToolsPage() {
                 </div>
             </div>
 
-            {/* Tab Selector - Glass Pill */}
-            <div className="flex bg-white/5 backdrop-blur-md rounded-2xl p-1.5 mb-8 border border-white/5">
+            {/* Tab Selector - Scrollable Flex */}
+            <div className="flex bg-white/5 backdrop-blur-md rounded-2xl p-1.5 mb-8 border border-white/5 overflow-x-auto no-scrollbar gap-1">
                 <button
                     onClick={() => setActiveTab('diary')}
-                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'diary'
+                    className={`min-w-[80px] flex-1 py-3 px-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5 flex-col ${activeTab === 'diary'
                         ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >
-                    <BookOpen className="w-4 h-4" /> Diario
+                    <BookOpen className="w-4 h-4" /> Entreno
+                </button>
+                <button
+                    onClick={() => setActiveTab('techniques')}
+                    className={`min-w-[80px] flex-1 py-3 px-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5 flex-col ${activeTab === 'techniques'
+                        ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'text-gray-500 hover:text-gray-300'
+                        }`}
+                >
+                    <Bookmark className="w-4 h-4" /> Técnicas
                 </button>
                 <button
                     onClick={() => setActiveTab('timer')}
-                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'timer'
+                    className={`min-w-[80px] flex-1 py-3 px-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5 flex-col ${activeTab === 'timer'
                         ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
@@ -202,7 +275,7 @@ export default function ToolsPage() {
                 </button>
                 <button
                     onClick={() => setActiveTab('calculator')}
-                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'calculator'
+                    className={`min-w-[80px] flex-1 py-3 px-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5 flex-col ${activeTab === 'calculator'
                         ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
@@ -297,6 +370,117 @@ export default function ToolsPage() {
                     </motion.div>
                 )}
 
+                {/* --- TECHNIQUES TAB --- */}
+                {activeTab === 'techniques' && (
+                    <motion.div
+                        key="techniques"
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                        className="space-y-6"
+                    >
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest shadow-white">Biblioteca BJJ</h2>
+                            <button
+                                onClick={() => setShowTechForm(!showTechForm)}
+                                className="bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/10 transition-all"
+                            >
+                                <Plus className={`w-3.5 h-3.5 transition-transform ${showTechForm ? 'rotate-45' : ''}`} /> {showTechForm ? 'Cerrar' : 'Añadir'}
+                            </button>
+                        </div>
+
+                        <AnimatePresence>
+                            {showTechForm && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <form onSubmit={handleAddTechnique} className="fighter-card mb-6 border-[var(--color-fighter-red)]/20">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Nombre de la Técnica</label>
+                                        <input
+                                            required placeholder="Ej: Triángulo desde Guardia Cerrada"
+                                            value={techName} onChange={(e) => setTechName(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 text-white text-sm font-bold rounded-xl px-4 py-4 outline-none mb-4 focus:ring-1 focus:ring-[var(--color-fighter-red)]"
+                                        />
+
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Categoría / Posición</label>
+                                        <select
+                                            value={techDiscipline} onChange={(e) => setTechDiscipline(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-4 outline-none mb-4 appearance-none focus:ring-1 focus:ring-[var(--color-fighter-red)]"
+                                        >
+                                            <option value="Guardia Cerrada">Guardia Cerrada</option>
+                                            <option value="Media Guardia">Media Guardia</option>
+                                            <option value="Montada">Montada</option>
+                                            <option value="Control Lateral / 100k">Control Lateral / 100k</option>
+                                            <option value="Espalda">Espalda</option>
+                                            <option value="Derribos / Pie">Derribos / Pie</option>
+                                        </select>
+
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Dominio (1 al 5)</label>
+                                        <div className="flex gap-2 mb-6">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star} type="button"
+                                                    onClick={() => setTechRating(star)}
+                                                    className={`p-2 rounded-lg transition-all ${techRating >= star ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/5 text-gray-600'}`}
+                                                >
+                                                    <Star className={`w-6 h-6 ${techRating >= star ? 'fill-current' : ''}`} />
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Detalles / Pasos</label>
+                                        <textarea
+                                            required placeholder="1. Agarre de manga y cuello..."
+                                            value={techDesc} onChange={(e) => setTechDesc(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-4 outline-none h-24 resize-none mb-4 focus:ring-1 focus:ring-[var(--color-fighter-red)]"
+                                        ></textarea>
+
+                                        <button type="submit" className="fighter-btn-primary w-full shadow-[0_0_15px_rgba(225,29,72,0.3)]">
+                                            Guardar Técnica
+                                        </button>
+                                    </form>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <div className="space-y-4">
+                            {techniques.length === 0 ? (
+                                <div className="fighter-card bg-transparent border-dashed border-white/10 text-center py-12">
+                                    <Bookmark className="w-10 h-10 text-gray-700 mx-auto mb-4" />
+                                    <p className="text-gray-500 text-sm font-bold italic">Tu biblioteca de técnicas está vacía.</p>
+                                    <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-2">Añade tu arsenal BJJ para estudiarlo</p>
+                                </div>
+                            ) : (
+                                techniques.map((tech: any, idx) => (
+                                    <motion.div
+                                        key={tech.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="fighter-card relative overflow-hidden group border-l-4 border-l-[var(--color-fighter-red)]"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1">
+                                                <div className="px-2 py-1 inline-block bg-[var(--color-fighter-red)]/10 text-[var(--color-fighter-red)] text-[9px] font-black uppercase tracking-widest rounded-md mb-2">
+                                                    {tech.discipline}
+                                                </div>
+                                                <h3 className="font-black text-white italic text-base uppercase leading-tight tracking-tight">{tech.name}</h3>
+                                            </div>
+                                            <div className="flex items-center gap-0.5 ml-2 bg-black/30 rounded-lg p-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Star key={star} className={`w-3 h-3 ${tech.rating >= star ? 'text-yellow-500 fill-current' : 'text-gray-700'}`} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-gray-400 leading-relaxed font-medium">"{tech.description}"</p>
+                                    </motion.div>
+                                ))
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* --- TIMER TAB --- */}
                 {activeTab === 'timer' && (
                     <motion.div
@@ -322,37 +506,45 @@ export default function ToolsPage() {
                         </div>
 
                         {/* Main Display */}
-                        <div className={`fighter-card py-16 text-center border-t-8 transition-colors duration-500 relative ${isResting ? 'border-t-blue-500 bg-blue-500/5' : isPrepping ? 'border-t-yellow-500 bg-yellow-500/5' : 'border-t-[var(--color-fighter-red)] bg-white/5'}`}>
-                            <button
-                                onClick={() => setIsMuted(!isMuted)}
-                                className="absolute top-4 right-4 text-gray-700 hover:text-white transition-colors"
-                            >
-                                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                            </button>
+                        <div className={`fighter-card py-16 text-center border-t-8 transition-colors duration-500 relative ${isResting ? 'border-t-blue-500 bg-blue-500/5' : isPrepping ? 'border-t-yellow-500 bg-yellow-500/5' : isEMOM ? 'border-t-purple-500 bg-purple-500/5' : 'border-t-[var(--color-fighter-red)] bg-white/5'} ${isFocusMode ? 'fixed inset-0 z-50 flex flex-col justify-center rounded-none m-0 border-t-0 border-b-8 bg-black' : ''}`}>
+                            <div className="absolute top-4 right-4 flex gap-3">
+                                <button onClick={() => setIsFocusMode(!isFocusMode)} className="text-gray-600 hover:text-white transition-colors">
+                                    <Maximize className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => setIsMuted(!isMuted)} className="text-gray-600 hover:text-white transition-colors">
+                                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                                </button>
+                            </div>
 
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-4">
-                                {isResting ? 'Descanso' : isPrepping ? 'Prepárate...' : 'Fight!'}
+                                {isResting ? 'Descanso' : isPrepping ? 'Prepárate...' : isEMOM ? 'EMOM MODE' : 'Fight!'}
                             </p>
-                            <h2 className={`text-8xl font-black italic tracking-tighter tabular-nums ${isResting ? 'text-blue-400' : isPrepping ? 'text-yellow-400' : 'text-white'}`}>
+                            <h2 className={`${isFocusMode ? 'text-[9rem]' : 'text-8xl'} font-black italic tracking-tighter tabular-nums ${isResting ? 'text-blue-400' : isPrepping ? 'text-yellow-400' : isEMOM ? 'text-purple-400' : 'text-white'}`}>
                                 {formatTime(timeLeft)}
                             </h2>
                             {timeLeft <= 10 && !isResting && !isPrepping && timerActive && (
                                 <motion.div
                                     animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1 }}
-                                    className="text-[10px] font-black text-[var(--color-fighter-red)] mt-4 uppercase tracking-widest"
+                                    className={`text-[10px] sm:text-lg font-black mt-4 uppercase tracking-widest ${isEMOM ? 'text-purple-400' : 'text-[var(--color-fighter-red)]'}`}
                                 >
-                                    ¡Últimos 10 Segundos!
+                                    ¡Últimos Segundos!
                                 </motion.div>
+                            )}
+
+                            {isFocusMode && (
+                                <button onClick={() => setIsFocusMode(false)} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-widest text-gray-500 border border-white/10 rounded-xl px-6 py-3">
+                                    Salir Focus
+                                </button>
                             )}
                         </div>
 
                         {/* Quick Modes */}
-                        <div className="grid grid-cols-3 gap-3">
-                            {['BJJ', 'MMA', 'BOX'].map((mode) => (
+                        <div className="grid grid-cols-4 gap-2">
+                            {['BJJ', 'MMA', 'BOX', 'EMOM'].map((mode) => (
                                 <button
                                     key={mode}
                                     onClick={() => setTimerMode(mode as any)}
-                                    className="bg-white/5 border border-white/10 text-[10px] font-black py-4 rounded-xl hover:bg-white/10 transition-all uppercase tracking-widest text-gray-400 hover:text-white"
+                                    className={`bg-white/5 border text-[10px] font-black py-4 rounded-xl hover:bg-white/10 transition-all uppercase tracking-widest ${mode === 'EMOM' && isEMOM ? 'border-purple-500/50 text-purple-400' : 'border-white/10 text-gray-400 hover:text-white'}`}
                                 >
                                     {mode}
                                 </button>

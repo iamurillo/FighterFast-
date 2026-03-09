@@ -23,6 +23,22 @@ export const db = {
         }
         return null;
     },
+
+    // --- TIMER CONFIGURATIONS ---
+    getTimerConfig: () => {
+        if (typeof window === "undefined") return null;
+        try {
+            const item = localStorage.getItem('fighterTimerConfig');
+            return item ? JSON.parse(item) : { roundTime: 300, restTime: 60, totalRounds: 5 };
+        } catch {
+            return { roundTime: 300, restTime: 60, totalRounds: 5 };
+        }
+    },
+    setTimerConfig: (config: any) => {
+        if (typeof window === "undefined") return;
+        localStorage.setItem('fighterTimerConfig', JSON.stringify(config));
+    },
+
     clearUser: () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('fighterUser');
@@ -239,6 +255,23 @@ export const db = {
         return null;
     },
 
+    // TECHNIQUE VAULT (FASE 5)
+    getTechniques: () => {
+        if (typeof window === 'undefined') return [];
+        return JSON.parse(localStorage.getItem('techniqueVault') || '[]');
+    },
+    addTechnique: (name: string, description: string, discipline: string, rating: number) => {
+        if (typeof window !== 'undefined') {
+            const vault = JSON.parse(localStorage.getItem('techniqueVault') || '[]');
+            const newTech = { id: Date.now(), name, description, discipline, rating, date: new Date().toISOString() };
+            vault.push(newTech);
+            localStorage.setItem('techniqueVault', JSON.stringify(vault));
+            return newTech;
+        }
+        return null;
+    },
+
+
     // ---- APEX EDITION FEATURES ----
 
     getWarriorQuote: () => {
@@ -311,6 +344,23 @@ export const db = {
         return classes.find(c => weight <= c.limit) || { name: "Super Pesado", limit: 999 };
     },
 
+    getTrophies: () => {
+        if (typeof window === 'undefined') return [];
+        const streak = db.getTrainingStreak();
+        const workouts = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+        const totalWorkouts = workouts.length;
+        const waterLogs = JSON.parse(localStorage.getItem('waterLogs') || '{}');
+        const hydratedDays = Object.values(waterLogs).filter((w: any) => w >= 3000).length;
+
+        return [
+            { id: 'iron_will', name: 'Iron Will', desc: '5 días de racha entrenando', achieved: streak >= 5, icon: 'Zap' },
+            { id: 'tatami_rat', name: 'Tatami Rat', desc: '20 sesiones de entrenamiento', achieved: totalWorkouts >= 20, icon: 'Activity' },
+            { id: 'blood_sweat', name: 'Blood & Sweat', desc: '50 asaltos/sesiones', achieved: totalWorkouts >= 50, icon: 'Shield' },
+            { id: 'hydration_master', name: 'Hydro Master', desc: '5 días de hidratación óptima (3L+)', achieved: hydratedDays >= 5, icon: 'Droplet' },
+            { id: 'black_belt_mind', name: 'Black Belt Mind', desc: 'Alcanza el rango Black Belt (>100)', achieved: totalWorkouts >= 100, icon: 'Trophy' }
+        ];
+    },
+
     // ---- DATA MANAGEMENT (BACKUP) ----
     getFullBackup: () => {
         if (typeof window === 'undefined') return "{}";
@@ -322,7 +372,8 @@ export const db = {
             workouts: localStorage.getItem('workoutHistory'),
             customFoods: localStorage.getItem('customFoods'),
             diary: localStorage.getItem('trainingDiary'),
-            fastState: localStorage.getItem('fastState')
+            fastState: localStorage.getItem('fastState'),
+            techniques: localStorage.getItem('techniqueVault')
         };
         return JSON.stringify(backup);
     },
@@ -338,6 +389,7 @@ export const db = {
             if (data.customFoods) localStorage.setItem('customFoods', data.customFoods);
             if (data.diary) localStorage.setItem('trainingDiary', data.diary);
             if (data.fastState) localStorage.setItem('fastState', data.fastState);
+            if (data.techniques) localStorage.setItem('techniqueVault', data.techniques);
             return true;
         } catch (e) {
             console.error("Error al restaurar backup:", e);

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -30,8 +31,9 @@ export default function ProfilePage() {
         const weights = db.getWeightHistory();
         const workouts = db.getWorkoutHistory();
         const streakVal = db.getTrainingStreak();
+        const trophies = db.getTrophies();
 
-        setData({ user, weights, workouts });
+        setData({ user, weights, workouts, trophies });
         setStreak(streakVal);
         setLoading(false);
     };
@@ -107,6 +109,22 @@ export default function ProfilePage() {
     );
 
     const weightProgressData = [...data.weights].reverse();
+
+    // Stats Analytics
+    const totalSessions = data.workouts.length;
+    const totalMinutes = data.workouts.reduce((acc: number, w: any) => acc + (Number(w.duration_minutes) || 0), 0);
+
+    const workoutStats = data.workouts.reduce((acc: any, w: any) => {
+        const type = w.type || 'Otro';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {});
+
+    const pieData = Object.keys(workoutStats).map(key => ({
+        name: key,
+        value: workoutStats[key]
+    }));
+    const PIE_COLORS = ['#E11D48', '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B'];
 
     return (
         <motion.div
@@ -198,21 +216,36 @@ export default function ProfilePage() {
                 </div>
             </motion.div>
 
-            {/* Achievements Row - Interesting Thing */}
-            <div className="flex gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar">
-                {[
-                    { label: 'Hidratado', icon: Droplet, count: db.getDailyWater() >= 3500 ? 1 : 0, color: 'text-blue-400' },
-                    { label: 'Ayunador', icon: Zap, count: streak >= 3 ? 1 : 0, color: 'text-emerald-400' },
-                    { label: 'Guerrero', icon: Shield, count: data.workouts.length >= 10 ? 1 : 0, color: 'text-orange-400' },
-                    { label: 'Experto', icon: Trophy, count: db.getFighterRank().name === 'Black Belt' ? 1 : 0, color: 'text-white' }
-                ].map((ach, i) => (
-                    <div key={i} className={`flex flex-col items-center gap-2 min-w-[70px] transition-opacity ${ach.count > 0 ? 'opacity-100' : 'opacity-20'}`}>
-                        <div className={`w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${ach.color}`}>
-                            <ach.icon className="w-6 h-6" />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-gray-500">{ach.label}</span>
-                    </div>
-                ))}
+            {/* Trophy Room (Sistema de Logros) */}
+            <div className="mb-10 mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Trophy Room</h2>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {data.trophies && data.trophies.map((trophy: any, idx: number) => {
+                        const IconComponent =
+                            trophy.icon === 'Zap' ? Zap :
+                                trophy.icon === 'Activity' ? Activity :
+                                    trophy.icon === 'Shield' ? Shield :
+                                        trophy.icon === 'Droplet' ? Droplet : Trophy;
+
+                        return (
+                            <div key={idx} className={`fighter-card border border-white/5 relative overflow-hidden transition-all ${trophy.achieved ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border-yellow-500/30' : 'bg-white/5 opacity-50 grayscale'}`}>
+                                {trophy.achieved && <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-500/20 rounded-full blur-xl -mr-8 -mt-8"></div>}
+                                <div className="flex flex-col items-center text-center gap-2 relative z-10">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${trophy.achieved ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'bg-white/10 text-gray-500'}`}>
+                                        <IconComponent className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${trophy.achieved ? 'text-yellow-400' : 'text-gray-400'} mb-1`}>{trophy.name}</p>
+                                        <p className="text-[7px] font-bold text-gray-500 uppercase tracking-tight leading-tight">{trophy.desc}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
 
             {/* Target & Current Weight Card - Glass */}
@@ -283,6 +316,62 @@ export default function ProfilePage() {
                     <div className="h-48 flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl bg-black/20">
                         <p className="text-gray-600 text-[10px] font-black uppercase tracking-widest text-center px-8 leading-relaxed">
                             Registra más datos para desbloquear analítica avanzada
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Combat Analytics Section */}
+            <div className="flex items-center gap-2 mb-6 mt-4">
+                <Activity className="w-5 h-5 text-purple-500" />
+                <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Analítica de Combate</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="fighter-card !bg-transparent glass-panel border-white/5 text-center py-6">
+                    <p className="text-4xl font-black text-white tracking-tighter leading-none mb-1">{totalSessions}</p>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Sesiones Totales</p>
+                </div>
+                <div className="fighter-card !bg-transparent glass-panel border-white/5 text-center py-6">
+                    <p className="text-4xl font-black text-[var(--color-fighter-red)] tracking-tighter leading-none mb-1">{totalMinutes}m</p>
+                    <p className="text-[9px] font-black text-[var(--color-fighter-red)] opacity-50 uppercase tracking-widest">Tiempo en Tatami</p>
+                </div>
+            </div>
+
+            <div className="fighter-card mb-8 border-white/5 !bg-transparent glass-panel">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 italic mb-4 text-center">Distribución de Disciplinas</h2>
+                {pieData.length > 0 ? (
+                    <div className="h-48 w-full relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    cx="50%" cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'rgba(5,5,5,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px', color: 'white', fontWeight: '900' }}
+                                    itemStyle={{ color: 'white' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
+                            <span className="text-2xl font-black text-white">{totalSessions}</span>
+                            <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest leading-none mt-1">Total</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="h-48 flex items-center justify-center">
+                        <p className="text-gray-600 text-[10px] font-black uppercase tracking-widest text-center px-8">
+                            Sin datos suficientes
                         </p>
                     </div>
                 )}
