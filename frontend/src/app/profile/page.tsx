@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft } from 'lucide-react';
+import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';

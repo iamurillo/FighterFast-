@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, CheckCircle2, Utensils, Flame, Info } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Utensils, Flame, Info, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
