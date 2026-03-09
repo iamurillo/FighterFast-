@@ -110,6 +110,16 @@ export default function DashboardPage() {
         setWater(newTotal);
     };
 
+    const getMetabolicZone = () => {
+        const elapsedHours = (progress * targetHours) / 100;
+        if (elapsedHours < 12) return { name: 'Quema de Azúcar', color: 'text-blue-400', desc: 'Tu cuerpo usa glucosa como combustible principal.' };
+        if (elapsedHours < 16) return { name: 'Quema de Grasa', color: 'text-emerald-400', desc: 'Niveles de insulina bajos, iniciando cetosis.' };
+        if (elapsedHours < 18) return { name: 'Autofagia Ligera', color: 'text-yellow-400', desc: 'Tus células inician procesos de limpieza.' };
+        return { name: 'Reparación Profunda', color: 'text-purple-400', desc: 'Máximo nivel de regeneración celular.' };
+    };
+
+    const zone = getMetabolicZone();
+
     const circumference = 2 * Math.PI * 120;
     const waterGoal = 3500;
     const waterProgress = Math.min(Math.round((water / waterGoal) * 100), 100);
@@ -189,13 +199,14 @@ export default function DashboardPage() {
                                 <motion.div
                                     key="fasting"
                                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                                    className="flex flex-col items-center"
+                                    className="flex flex-col items-center text-center px-12"
                                 >
-                                    <Zap className="w-6 h-6 text-emerald-400 mb-2 animate-pulse" />
+                                    <Zap className={`w-6 h-6 ${zone.color} mb-2 animate-pulse`} />
                                     <p className="text-5xl font-black text-white tracking-tighter mb-1">
-                                        {Math.floor((progress * targetHours / 100))}:{((progress * targetHours / 100) % 1 * 60).toFixed(0).padStart(2, '0')}:02
+                                        {Math.floor((progress * targetHours / 100))}:{((progress * targetHours / 100) % 1 * 60).toFixed(0).padStart(2, '0')}
                                     </p>
-                                    <p className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">Meta: {targetHours}H</p>
+                                    <p className={`text-[10px] font-black ${zone.color} tracking-[0.2em] uppercase mb-2`}>{zone.name}</p>
+                                    <p className="text-[8px] font-bold text-gray-500 uppercase leading-tight max-w-[150px]">{zone.desc}</p>
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -227,12 +238,29 @@ export default function DashboardPage() {
                 </div>
 
                 {isFasting && (
-                    <button
-                        onClick={handleStopFast}
-                        className="mt-6 text-[10px] font-black tracking-widest border border-white/10 bg-white/5 px-8 py-3 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-all uppercase"
-                    >
-                        Terminar Ayuno
-                    </button>
+                    <div className="mt-8 w-full max-w-[200px]">
+                        <div className="flex justify-between mb-1.5 opacity-40">
+                            {['12h', '16h', '18h'].map(h => (
+                                <span key={h} className="text-[7px] font-black text-white uppercase">{h}</span>
+                            ))}
+                        </div>
+                        <div className="w-full h-1 bg-white/5 rounded-full relative">
+                            <motion.div
+                                className="absolute h-full bg-emerald-500 rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                            />
+                            {[12, 16, 18].map(h => (
+                                <div key={h} className="absolute top-0 w-0.5 h-full bg-white/20" style={{ left: `${(h / targetHours) * 100}%` }} />
+                            ))}
+                        </div>
+                        <button
+                            onClick={handleStopFast}
+                            className="mt-6 w-full text-[10px] font-black tracking-widest border border-white/10 bg-white/5 px-8 py-3 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-all uppercase"
+                        >
+                            Terminar Ayuno
+                        </button>
+                    </div>
                 )}
             </div>
 

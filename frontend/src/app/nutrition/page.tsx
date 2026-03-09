@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, CheckCircle2, Utensils, Flame, Info, TrendingUp } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Utensils, Flame, Info, TrendingUp, Bookmark, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -19,6 +19,12 @@ export default function NutritionPage() {
     const [saveAsCustom, setSaveAsCustom] = useState(false);
 
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [recipes, setRecipes] = useState<any[]>([]);
+    const [showRecipeForm, setShowRecipeForm] = useState(false);
+    const [recipeName, setRecipeName] = useState('');
+    const [weeklyPlan, setWeeklyPlan] = useState<any>({});
+    const [showWeeklyPlanner, setShowWeeklyPlanner] = useState(false);
+    const [selectedDay, setSelectedDay] = useState('L');
 
     const QUICK_TEMPLATES = [
         { name: "Pechuga con Arroz", cal: 550, p: 45, c: 60, f: 8, type: 'lunch' },
@@ -53,7 +59,37 @@ export default function NutritionPage() {
     const fetchDailyMeals = () => {
         const data = db.getDailyMeals();
         setDailyData(data);
+        setRecipes(db.getRecipes());
+        setWeeklyPlan(db.getWeeklyPlan());
         setLoading(false);
+    };
+
+    const handleAddRecipe = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newRecipe = {
+            name: recipeName,
+            calories: Number(calories),
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fats: Number(fats) || 0
+        };
+        db.addRecipe(newRecipe);
+        setRecipeName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+        setShowRecipeForm(false);
+        setRecipes(db.getRecipes());
+    };
+
+    const useRecipe = (recipe: any) => {
+        db.addMeal({
+            name: recipe.name,
+            calories: recipe.calories,
+            protein: recipe.protein,
+            carbs: recipe.carbs,
+            fats: recipe.fats,
+            meal_type: 'lunch' // Default
+        });
+        fetchDailyMeals();
+        alert(`Receta "${recipe.name}" añadida.`);
     };
 
     const handleAddMeal = (e: React.FormEvent) => {
@@ -95,12 +131,28 @@ export default function NutritionPage() {
                     <span className="text-[var(--color-fighter-red)] text-[10px] font-black uppercase tracking-[0.2em] mb-1">Fuel Your Fight</span>
                     <h1 className="text-3xl font-black text-white leading-none">Nutrición</h1>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="w-12 h-12 rounded-2xl bg-[var(--color-fighter-red)] text-white flex justify-center items-center shadow-[0_0_20px_rgba(225,29,72,0.3)] transition-all active:scale-90"
-                >
-                    <Plus className={`w-7 h-7 transition-transform duration-300 ${showAddForm ? 'rotate-45' : 'rotate-0'}`} />
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowWeeklyPlanner(!showWeeklyPlanner)}
+                        className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-500 flex justify-center items-center transition-all active:scale-90"
+                        title="Plan Semanal"
+                    >
+                        <Calendar className="w-6 h-6" />
+                    </button>
+                    <button
+                        onClick={() => setShowRecipeForm(!showRecipeForm)}
+                        className="w-12 h-12 rounded-2xl bg-amber-600/20 border border-amber-500/30 text-amber-500 flex justify-center items-center transition-all active:scale-90"
+                        title="Nueva Receta"
+                    >
+                        <Bookmark className="w-6 h-6" />
+                    </button>
+                    <button
+                        onClick={() => setShowAddForm(!showAddForm)}
+                        className="w-12 h-12 rounded-2xl bg-[var(--color-fighter-red)] text-white flex justify-center items-center shadow-[0_0_20px_rgba(225,29,72,0.3)] transition-all active:scale-90"
+                    >
+                        <Plus className={`w-7 h-7 transition-transform duration-300 ${showAddForm ? 'rotate-45' : 'rotate-0'}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Add Meal Form - Modern Modal-like */}
@@ -205,6 +257,130 @@ export default function NutritionPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Weekly Planner Section */}
+            <AnimatePresence>
+                {showWeeklyPlanner && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className="mb-10 overflow-hidden"
+                    >
+                        <div className="flex items-center gap-2 mb-4">
+                            <Calendar className="w-5 h-5 text-blue-500" />
+                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Plan Semanal</h2>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 mb-6">
+                            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day) => (
+                                <button
+                                    key={day}
+                                    onClick={() => setSelectedDay(day)}
+                                    className={`fighter-card !p-2 border-white/5 text-center transition-all ${selectedDay === day ? 'bg-blue-600 border-blue-400' : 'bg-white/5 hover:border-blue-500/30'}`}
+                                >
+                                    <span className={`text-[10px] font-black ${selectedDay === day ? 'text-white' : 'text-gray-500'}`}>{day}</span>
+                                    <div className="w-full h-1 bg-white/10 mt-1 rounded-full overflow-hidden">
+                                        {weeklyPlan[day] && <div className="h-full bg-blue-400" style={{ width: '100%' }} />}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Selected Day Plan */}
+                        <div className="fighter-card border-blue-500/20 bg-blue-500/5 p-4 min-h-[100px]">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xs font-black text-white uppercase tracking-widest">Plan para {selectedDay}</h3>
+                                {weeklyPlan[selectedDay] ? (
+                                    <button onClick={() => {
+                                        const newPlan = { ...weeklyPlan };
+                                        delete newPlan[selectedDay];
+                                        db.updateWeeklyPlan(selectedDay, null);
+                                        setWeeklyPlan(newPlan);
+                                    }} className="text-[9px] font-black text-red-400 uppercase">Limpiar</button>
+                                ) : null}
+                            </div>
+
+                            {weeklyPlan[selectedDay] ? (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                                        <span className="text-[10px] font-bold text-gray-300 uppercase">{weeklyPlan[selectedDay].name}</span>
+                                        <span className="text-[10px] font-black text-blue-400">{weeklyPlan[selectedDay].calories} kcal</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-4 border border-dashed border-white/10 rounded-xl">
+                                    <p className="text-[9px] font-bold text-gray-700 uppercase mb-3">No hay nada planeado</p>
+                                    <div className="flex gap-2">
+                                        {QUICK_TEMPLATES.slice(0, 2).map(t => (
+                                            <button
+                                                key={t.name}
+                                                onClick={() => {
+                                                    db.updateWeeklyPlan(selectedDay, t);
+                                                    setWeeklyPlan(db.getWeeklyPlan());
+                                                }}
+                                                className="px-3 py-1.5 bg-blue-600/20 border border-blue-500/30 rounded-lg text-[8px] font-black text-blue-400 uppercase"
+                                            >
+                                                + {t.name.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Recipe Form */}
+            <AnimatePresence>
+                {showRecipeForm && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                        className="fighter-card mb-10 border-amber-500/20 bg-amber-500/5 relative z-20"
+                    >
+                        <h3 className="text-xl font-black text-amber-500 italic uppercase tracking-tighter mb-6">Crear Receta Elite</h3>
+                        <form onSubmit={handleAddRecipe} className="space-y-4">
+                            <input
+                                required placeholder="Nombre (ej. Batido Post-Rool)"
+                                value={recipeName} onChange={(e) => setRecipeName(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-sm"
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <input placeholder="Kcal" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-sm" />
+                                <div className="grid grid-cols-3 gap-2">
+                                    <input placeholder="P" type="number" value={protein} onChange={(e) => setProtein(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-2 py-4 text-red-400 text-center text-[10px]" />
+                                    <input placeholder="C" type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-2 py-4 text-blue-400 text-center text-[10px]" />
+                                    <input placeholder="F" type="number" value={fats} onChange={(e) => setFats(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-2 py-4 text-emerald-400 text-center text-[10px]" />
+                                </div>
+                            </div>
+                            <button type="submit" className="w-full bg-amber-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs">Guardar Receta</button>
+                        </form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Recipe Vault Section */}
+            {recipes.length > 0 && (
+                <div className="mb-10">
+                    <h2 className="text-[10px] font-black text-amber-500/50 uppercase tracking-widest mb-4">Recipe Vault</h2>
+                    <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+                        {recipes.map((r) => (
+                            <button
+                                key={r.id}
+                                onClick={() => useRecipe(r)}
+                                className="fighter-card min-w-[140px] bg-amber-500/5 border-amber-500/10 hover:border-amber-500/40 p-4 transition-all text-left group"
+                            >
+                                <p className="text-xs font-black text-white uppercase tracking-tight mb-2 group-hover:text-amber-400">{r.name}</p>
+                                <div className="flex flex-col gap-1 opacity-50">
+                                    <span className="text-[9px] font-bold text-gray-400">{r.calories} kcal</span>
+                                    <div className="flex gap-2">
+                                        <span className="text-[8px] text-red-400">P:{r.protein}</span>
+                                        <span className="text-[8px] text-blue-400">C:{r.carbs}</span>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* QUICK TEMPLATES */}
             <div className="mb-10">

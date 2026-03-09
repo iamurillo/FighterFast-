@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy, Share2, Bookmark, Scale } from 'lucide-react';
+import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy, Share2, Bookmark, Scale, Settings } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -152,7 +152,10 @@ export default function ProfilePage() {
         >
             {/* Header Profile Premium */}
             {/* Header Profile - Solo Botón de Logout arriba */}
-            <div className="flex justify-end mb-4 pt-4">
+            <div className="flex justify-between mb-4 pt-4">
+                <button onClick={() => router.push('/settings')} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all active:scale-90">
+                    <Settings className="w-4 h-4" />
+                </button>
                 <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all active:scale-90">
                     <LogOut className="w-4 h-4" />
                 </button>
@@ -593,6 +596,49 @@ export default function ProfilePage() {
                         <button onClick={handleResetApp} className="px-5 py-2.5 bg-red-900/10 border border-red-500/10 text-[10px] font-black uppercase tracking-widest text-red-500 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all">
                             Reiniciar
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Fasting History - New Feature Phase 8 */}
+            <div className="mb-12 mt-12">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                        <Zap className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Disciplina</p>
+                        <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Historial de Ayunos</h2>
+                    </div>
+                </div>
+
+                <div className="fighter-card border-white/10 bg-white/5 p-6">
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Promedio 7D</p>
+                            <p className="text-3xl font-black text-white italic tracking-tighter">16.5 <span className="text-xs font-normal text-gray-500 not-italic uppercase">Horas</span></p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Cumplimiento</p>
+                            <p className="text-[10px] font-black text-white uppercase tracking-tighter">92%</p>
+                        </div>
+                    </div>
+
+                    <div className="h-24 flex items-end justify-between gap-1.5 px-1">
+                        {[16, 18, 14, 20, 16, 12, 17].map((h, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center">
+                                <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${(h / 24) * 100}%` }}
+                                    className={`w-full rounded-t-lg relative group ${h >= 16 ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-white/10'}`}
+                                >
+                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        {h}h
+                                    </div>
+                                </motion.div>
+                                <span className="text-[7px] font-black text-gray-600 uppercase mt-2">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][i]}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

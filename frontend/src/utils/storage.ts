@@ -47,6 +47,18 @@ export const db = {
         localStorage.setItem('fighterTimerConfig', JSON.stringify(config));
     },
 
+    // --- GLOBAL SETTINGS & PREFERENCES ---
+    getSettings: () => {
+        if (typeof window === 'undefined') return { units: 'metric', manualMacros: false, theme: 'combat' };
+        const data = localStorage.getItem('fighterSettings');
+        return data ? JSON.parse(data) : { units: 'metric', manualMacros: false, theme: 'combat' };
+    },
+    saveSettings: (settings: any) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('fighterSettings', JSON.stringify(settings));
+        }
+    },
+
     clearUser: () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('fighterUser');
@@ -106,6 +118,39 @@ export const db = {
             return newMeal;
         }
         return null;
+    },
+
+    // ---- RECIPES & WEEKLY PLAN ----
+    getRecipes: () => {
+        if (typeof window === 'undefined') return [];
+        return JSON.parse(localStorage.getItem('recipes') || '[]');
+    },
+    addRecipe: (recipe: any) => {
+        if (typeof window !== 'undefined') {
+            const recipes = db.getRecipes();
+            const newRecipe = { ...recipe, id: Date.now() };
+            recipes.push(newRecipe);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            return newRecipe;
+        }
+        return null;
+    },
+    deleteRecipe: (id: number) => {
+        if (typeof window !== 'undefined') {
+            const recipes = db.getRecipes().filter((r: any) => r.id !== id);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
+    },
+    getWeeklyPlan: () => {
+        if (typeof window === 'undefined') return {};
+        return JSON.parse(localStorage.getItem('weeklyPlan') || '{}');
+    },
+    updateWeeklyPlan: (day: string, plan: any) => {
+        if (typeof window !== 'undefined') {
+            const fullPlan = db.getWeeklyPlan();
+            fullPlan[day] = plan;
+            localStorage.setItem('weeklyPlan', JSON.stringify(fullPlan));
+        }
     },
 
     // ---- FOOD DATABASE (Mock for search) ----
@@ -391,7 +436,10 @@ export const db = {
             diary: localStorage.getItem('trainingDiary'),
             fastState: localStorage.getItem('fastState'),
             techniques: localStorage.getItem('techniqueVault'),
-            fightDate: localStorage.getItem('fightDate')
+            fightDate: localStorage.getItem('fightDate'),
+            settings: localStorage.getItem('fighterSettings'),
+            recipes: localStorage.getItem('recipes'),
+            weeklyPlan: localStorage.getItem('weeklyPlan')
         };
         return JSON.stringify(backup);
     },
@@ -409,6 +457,9 @@ export const db = {
             if (data.fastState) localStorage.setItem('fastState', data.fastState);
             if (data.techniques) localStorage.setItem('techniqueVault', data.techniques);
             if (data.fightDate) localStorage.setItem('fightDate', data.fightDate);
+            if (data.settings) localStorage.setItem('fighterSettings', data.settings);
+            if (data.recipes) localStorage.setItem('recipes', data.recipes);
+            if (data.weeklyPlan) localStorage.setItem('weeklyPlan', data.weeklyPlan);
             return true;
         } catch (e) {
             console.error("Error al restaurar backup:", e);
