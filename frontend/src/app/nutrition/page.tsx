@@ -22,6 +22,9 @@ export default function NutritionPage() {
     const [recipes, setRecipes] = useState<any[]>([]);
     const [showRecipeForm, setShowRecipeForm] = useState(false);
     const [recipeName, setRecipeName] = useState('');
+    const [recipeDescription, setRecipeDescription] = useState('');
+    const [editingRecipeId, setEditingRecipeId] = useState<number | null>(null);
+    const [selectedRecipeDetail, setSelectedRecipeDetail] = useState<any | null>(null);
     const [weeklyPlan, setWeeklyPlan] = useState<any>({});
     const [showWeeklyPlanner, setShowWeeklyPlanner] = useState(false);
     const [selectedDay, setSelectedDay] = useState('L');
@@ -66,17 +69,46 @@ export default function NutritionPage() {
 
     const handleAddRecipe = (e: React.FormEvent) => {
         e.preventDefault();
-        const newRecipe = {
+        const recipeData = {
             name: recipeName,
             calories: Number(calories),
             protein: Number(protein) || 0,
             carbs: Number(carbs) || 0,
-            fats: Number(fats) || 0
+            fats: Number(fats) || 0,
+            description: recipeDescription
         };
-        db.addRecipe(newRecipe);
-        setRecipeName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
-        setShowRecipeForm(false);
+
+        if (editingRecipeId) {
+            db.updateRecipe(editingRecipeId, recipeData);
+            alert('Receta actualizada correctamente.');
+        } else {
+            db.addRecipe(recipeData);
+            alert('Receta guardada en el vault.');
+        }
+
+        setRecipeName(''); setRecipeDescription(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+        setShowRecipeForm(false); setEditingRecipeId(null);
         setRecipes(db.getRecipes());
+    };
+
+    const deleteRecipe = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        if (confirm('¿Eliminar esta receta permanentemente?')) {
+            db.deleteRecipe(id);
+            setRecipes(db.getRecipes());
+        }
+    };
+
+    const startEditRecipe = (e: React.MouseEvent, recipe: any) => {
+        e.stopPropagation();
+        setEditingRecipeId(recipe.id);
+        setRecipeName(recipe.name);
+        setRecipeDescription(recipe.description || '');
+        setCalories(recipe.calories.toString());
+        setProtein(recipe.protein.toString());
+        setCarbs(recipe.carbs.toString());
+        setFats(recipe.fats.toString());
+        setShowRecipeForm(true);
     };
 
     const useRecipe = (recipe: any) => {
@@ -329,19 +361,26 @@ export default function NutritionPage() {
                 )}
             </AnimatePresence>
 
-            {/* Recipe Form */}
+            {/* Recipe Form - Integrated Description */}
             <AnimatePresence>
                 {showRecipeForm && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                         className="fighter-card mb-10 border-amber-500/20 bg-amber-500/5 relative z-20"
                     >
-                        <h3 className="text-xl font-black text-amber-500 italic uppercase tracking-tighter mb-6">Crear Receta Elite</h3>
+                        <h3 className="text-xl font-black text-amber-500 italic uppercase tracking-tighter mb-6">
+                            {editingRecipeId ? 'Editar Receta Elite' : 'Crear Receta Elite'}
+                        </h3>
                         <form onSubmit={handleAddRecipe} className="space-y-4">
                             <input
                                 required placeholder="Nombre (ej. Batido Post-Rool)"
                                 value={recipeName} onChange={(e) => setRecipeName(e.target.value)}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-sm"
+                            />
+                            <textarea
+                                placeholder="Descripción y Preparación..."
+                                value={recipeDescription} onChange={(e) => setRecipeDescription(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-sm min-h-[100px] resize-none"
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <input placeholder="Kcal" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-sm" />
@@ -351,9 +390,61 @@ export default function NutritionPage() {
                                     <input placeholder="F" type="number" value={fats} onChange={(e) => setFats(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-2 py-4 text-emerald-400 text-center text-[10px]" />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-amber-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs">Guardar Receta</button>
+                            <div className="flex gap-2">
+                                <button type="submit" className="flex-1 bg-amber-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs">
+                                    {editingRecipeId ? 'Actualizar' : 'Guardar'}
+                                </button>
+                                {editingRecipeId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowRecipeForm(false); setEditingRecipeId(null); setRecipeName(''); setRecipeDescription(''); }}
+                                        className="px-6 bg-white/5 text-gray-400 font-bold rounded-xl text-[10px] uppercase"
+                                    >
+                                        Cancelar
+                                    </button>
+                                )}
+                            </div>
                         </form>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Recipe Details Modal */}
+            <AnimatePresence>
+                {selectedRecipeDetail && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="fighter-card max-w-sm w-full border-amber-500/30 bg-[#0A0A0A] overflow-hidden"
+                        >
+                            <div className="p-8">
+                                <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">{selectedRecipeDetail.name}</h3>
+                                <div className="flex gap-4 mb-6 pb-6 border-b border-white/5">
+                                    <div><p className="text-[8px] font-black text-gray-500 uppercase">Calorías</p><p className="text-lg font-black text-white">{selectedRecipeDetail.calories}</p></div>
+                                    <div><p className="text-[8px] font-black text-gray-500 uppercase">Proteína</p><p className="text-lg font-black text-red-400">{selectedRecipeDetail.protein}g</p></div>
+                                    <div><p className="text-[8px] font-black text-gray-500 uppercase">Carbos</p><p className="text-lg font-black text-blue-400">{selectedRecipeDetail.carbs}g</p></div>
+                                </div>
+                                <div className="mb-8">
+                                    <p className="text-[10px] font-black text-amber-500/50 uppercase tracking-widest mb-3">Preparación Elite</p>
+                                    <p className="text-gray-400 text-xs leading-relaxed italic">{selectedRecipeDetail.description || 'Sin descripción disponible para esta receta.'}</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { useRecipe(selectedRecipeDetail); setSelectedRecipeDetail(null); }}
+                                        className="flex-1 bg-amber-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs"
+                                    >
+                                        Añadir al Día
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedRecipeDetail(null)}
+                                        className="px-6 bg-white/5 text-gray-400 font-bold rounded-xl text-[10px] uppercase"
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
 
@@ -363,20 +454,30 @@ export default function NutritionPage() {
                     <h2 className="text-[10px] font-black text-amber-500/50 uppercase tracking-widest mb-4">Recipe Vault</h2>
                     <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
                         {recipes.map((r) => (
-                            <button
+                            <div
                                 key={r.id}
-                                onClick={() => useRecipe(r)}
-                                className="fighter-card min-w-[140px] bg-amber-500/5 border-amber-500/10 hover:border-amber-500/40 p-4 transition-all text-left group"
+                                className="fighter-card min-w-[160px] bg-amber-500/5 border-amber-500/10 hover:border-amber-500/40 p-4 transition-all text-left group relative"
                             >
-                                <p className="text-xs font-black text-white uppercase tracking-tight mb-2 group-hover:text-amber-400">{r.name}</p>
-                                <div className="flex flex-col gap-1 opacity-50">
-                                    <span className="text-[9px] font-bold text-gray-400">{r.calories} kcal</span>
-                                    <div className="flex gap-2">
-                                        <span className="text-[8px] text-red-400">P:{r.protein}</span>
-                                        <span className="text-[8px] text-blue-400">C:{r.carbs}</span>
+                                <div onClick={() => setSelectedRecipeDetail(r)} className="cursor-pointer">
+                                    <p className="text-xs font-black text-white uppercase tracking-tight mb-2 group-hover:text-amber-400">{r.name}</p>
+                                    <div className="flex flex-col gap-1 opacity-50">
+                                        <span className="text-[9px] font-bold text-gray-400">{r.calories} kcal</span>
+                                        <div className="flex gap-2">
+                                            <span className="text-[8px] text-red-400">P:{r.protein}</span>
+                                            <span className="text-[8px] text-blue-400">C:{r.carbs}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </button>
+
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={(e) => startEditRecipe(e, r)} className="p-1.5 bg-white/5 rounded-md hover:text-white text-gray-500 transition-colors">
+                                        <Info className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={(e) => deleteRecipe(e, r.id)} className="p-1.5 bg-red-900/10 rounded-md hover:text-red-500 text-red-900 transition-colors">
+                                        <Plus className="w-3 h-3 rotate-45" />
+                                    </button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>

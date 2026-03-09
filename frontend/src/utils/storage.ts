@@ -123,17 +123,35 @@ export const db = {
     // ---- RECIPES & WEEKLY PLAN ----
     getRecipes: () => {
         if (typeof window === 'undefined') return [];
-        return JSON.parse(localStorage.getItem('recipes') || '[]');
+        const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+        if (recipes.length === 0) {
+            const masterRecipes = [
+                { id: 101, name: "Avena Pro Sparring", calories: 450, protein: 25, carbs: 60, fats: 10, description: "Bowl de avena con proteína en polvo, plátano y un puñado de nueces. Energía de larga duración para el tatami." },
+                { id: 102, name: "Ensalada Elite Atún", calories: 380, protein: 40, carbs: 15, fats: 18, description: "Atún al natural, espinacas, aguacate y huevo cocido. Macro-nutrientes limpios para recuperación muscular." },
+                { id: 103, name: "Smoothie Post-Guerra", calories: 320, protein: 30, carbs: 40, fats: 5, description: "Bayas congeladas, leche de almendras y scoop de whey. Rápida absorción tras entrenamiento intenso." }
+            ];
+            localStorage.setItem('recipes', JSON.stringify(masterRecipes));
+            return masterRecipes;
+        }
+        return recipes;
     },
     addRecipe: (recipe: any) => {
         if (typeof window !== 'undefined') {
             const recipes = db.getRecipes();
-            const newRecipe = { ...recipe, id: Date.now() };
+            const newRecipe = { ...recipe, id: Date.now(), description: recipe.description || '' };
             recipes.push(newRecipe);
             localStorage.setItem('recipes', JSON.stringify(recipes));
             return newRecipe;
         }
         return null;
+    },
+    updateRecipe: (id: number, data: any) => {
+        if (typeof window !== 'undefined') {
+            const recipes = db.getRecipes().map((r: any) =>
+                r.id === id ? { ...r, ...data } : r
+            );
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
     },
     deleteRecipe: (id: number) => {
         if (typeof window !== 'undefined') {
