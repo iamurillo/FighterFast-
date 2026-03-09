@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
+
 export default function ProfilePage() {
     const router = useRouter();
     const [data, setData] = useState<any>(null);
@@ -90,187 +91,281 @@ export default function ProfilePage() {
         }
     };
 
-    if (loading || !data) return <div className="p-6 text-center text-gray-500 mt-10">Cargando perfil...</div>;
+    if (loading || !data) return (
+        <div className="min-h-screen bg-[var(--color-fighter-background)] flex items-center justify-center p-6 text-center">
+            <div className="w-8 h-8 border-2 border-[var(--color-fighter-red)] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
+
+    const weightProgressData = [...data.weights].reverse();
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 pb-24"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="p-6 pb-24 max-w-md mx-auto"
         >
-
-            {/* Header Profile */}
-            <div className="flex items-center gap-4 mb-8 pt-4">
-                <div className="w-16 h-16 rounded-full bg-[var(--color-fighter-surface)] border-2 border-[var(--color-fighter-surface-hover)] p-1">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.name}&backgroundColor=transparent`} className="w-full h-full rounded-full" />
-                </div>
-                <div className="flex-1">
-                    <h1 className="text-2xl font-black tracking-tight text-white mb-0">{data.user.name}</h1>
-                    <p className="text-sm font-medium text-gray-400 capitalize">{data.user.training_type} Atleta</p>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={handleLogout} className="p-2 bg-red-900/20 text-red-500 rounded-lg hover:bg-red-900/40 transition-colors">
-                        <LogOut className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Target & Current Weight Card */}
-            <motion.div
-                whileHover={{ scale: 1.01 }}
-                className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-6 flex justify-between items-center"
-            >
-                <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Peso Actual</p>
-                    <div className="flex items-end gap-2">
-                        <p className="text-3xl font-black text-white">{data.user.current_weight}</p>
-                        <p className="text-sm text-gray-500 mb-1 font-bold">kg</p>
+            {/* Header Profile Premium */}
+            <div className="flex items-center gap-6 mb-10 pt-4">
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    <div className="relative w-24 h-24 rounded-2xl bg-[var(--color-fighter-surface)] border border-white/10 p-1 bg-clip-border overflow-hidden ring-4 ring-black">
+                        <img
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.name}&backgroundColor=transparent`}
+                            className="w-full h-full rounded-xl"
+                            alt="Avatar"
+                        />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-6 h-6 rounded-lg border-4 border-black flex items-center justify-center">
+                        <Shield className="w-3 h-3 text-black fill-black" />
                     </div>
                 </div>
 
-                <div className="w-px h-12 bg-gray-800"></div>
+                <div className="flex-1">
+                    <span className="text-[var(--color-fighter-red)] text-[9px] font-black uppercase tracking-[0.3em] mb-1.5 block">V1 Elite Member</span>
+                    <h1 className="text-3xl font-black text-white leading-tight uppercase italic">{data.user.name}</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Activity className="w-3 h-3 text-gray-500" />
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{data.user.training_type}</span>
+                    </div>
+                </div>
 
-                <div className="text-right">
-                    <p className="text-xs text-[var(--color-fighter-green)] font-bold uppercase tracking-wider mb-1">Peso Objetivo</p>
-                    <div className="flex items-end gap-2 justify-end">
-                        <p className="text-3xl font-black text-[var(--color-fighter-green)]">{data.user.target_weight}</p>
-                        <p className="text-sm text-green-900 mb-1 font-bold">kg</p>
+                <button onClick={handleLogout} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all active:scale-90">
+                    <LogOut className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Target & Current Weight Card - Glass */}
+            <motion.div
+                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                className="fighter-card !bg-transparent glass-panel border-white/10 mb-8 overflow-hidden relative"
+            >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                <div className="flex justify-between items-center relative z-10">
+                    <div>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5">Peso Actual</p>
+                        <div className="flex items-baseline gap-1">
+                            <p className="text-4xl font-black text-white tracking-tighter">{data.user.current_weight}</p>
+                            <p className="text-xs text-gray-500 font-bold uppercase transition-all">kg</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <div className="w-px h-12 bg-white/10"></div>
+                        <TrendingDown className="w-4 h-4 text-emerald-500/50 mt-2" />
+                    </div>
+
+                    <div className="text-right">
+                        <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em] mb-1.5">Objetivo</p>
+                        <div className="flex items-baseline gap-1 justify-end">
+                            <p className="text-4xl font-black text-emerald-500 tracking-tighter">{data.user.target_weight}</p>
+                            <p className="text-xs text-emerald-900 font-bold uppercase">kg</p>
+                        </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Weight Chart */}
-            <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-6">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Evolución de Peso</h2>
+            {/* Weight Evolution Graph - High Contrast */}
+            <div className="fighter-card mb-8 border-white/5 bg-gradient-to-b from-[var(--color-fighter-surface)] to-black">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500 italic">Evolución Pro</h2>
+                    <TrendingUp className="w-4 h-4 text-[var(--color-fighter-red)]" />
+                </div>
+
                 {data.weights && data.weights.length >= 2 ? (
-                    <div className="h-48 w-full">
+                    <div className="h-48 w-full -ml-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={[...data.weights].reverse()}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
+                            <AreaChart data={weightProgressData}>
+                                <defs>
+                                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                 <XAxis
                                     dataKey="date"
                                     tickFormatter={(val) => new Date(val).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                    stroke="#4a5568" fontSize={9}
+                                    stroke="rgba(255,255,255,0.2)" fontSize={9} fontVariant="lining-nums"
+                                    axisLine={false} tickLine={false}
                                 />
-                                <YAxis domain={['auto', 'auto']} stroke="#4a5568" fontSize={9} width={25} />
+                                <YAxis hide domain={['auto', 'auto']} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '12px', fontSize: '12px' }}
+                                    contentStyle={{ backgroundColor: 'rgba(5,5,5,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px', backdropFilter: 'blur(10px)', color: 'white' }}
                                     labelFormatter={(val) => new Date(val).toLocaleDateString()}
+                                    itemStyle={{ fontWeight: '900', color: '#10B981' }}
                                 />
-                                <Line type="stepAfter" dataKey="weight" stroke="var(--color-fighter-green)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-fighter-green)" }} />
-                            </LineChart>
+                                <Area type="monotone" dataKey="weight" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" animationDuration={1500} />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 ) : (
-                    <div className="h-48 flex items-center justify-center border-2 border-dashed border-gray-700 rounded-xl">
-                        <p className="text-gray-500 text-sm text-center px-4">Registra al menos 2 pesos para ver tu gráfica de progreso.</p>
+                    <div className="h-48 flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl bg-black/20">
+                        <p className="text-gray-600 text-[10px] font-black uppercase tracking-widest text-center px-8 leading-relaxed">
+                            Registra más datos para desbloquear analítica avanzada
+                        </p>
                     </div>
                 )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-8">
-                <button onClick={() => setShowWeightForm(!showWeightForm)} className="flex items-center justify-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 font-bold py-4 rounded-2xl border border-blue-500/20 transition-all active:scale-95">
-                    <TrendingDown className="w-5 h-5" /> Peso
+            {/* Quick Record Actions */}
+            <div className="grid grid-cols-2 gap-4 mb-10">
+                <button
+                    onClick={() => setShowWeightForm(!showWeightForm)}
+                    className="fighter-card !bg-blue-500/5 hover:!bg-blue-500/10 !border-blue-500/10 flex flex-col items-center justify-center py-6 gap-3 group active:scale-95"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <TrendingDown className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Registrar Peso</span>
                 </button>
-                <button onClick={() => setShowWorkoutForm(!showWorkoutForm)} className="flex items-center justify-center gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 font-bold py-4 rounded-2xl border border-purple-500/20 transition-all active:scale-95">
-                    <Activity className="w-5 h-5" /> Entreno
+                <button
+                    onClick={() => setShowWorkoutForm(!showWorkoutForm)}
+                    className="fighter-card !bg-purple-500/5 hover:!bg-purple-500/10 !border-purple-500/10 flex flex-col items-center justify-center py-6 gap-3 group active:scale-95"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Activity className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Añadir Entreno</span>
                 </button>
             </div>
 
             <AnimatePresence>
-                {showWeightForm && (
-                    <motion.form
-                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                        onSubmit={handleAddWeight} className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] mb-6 flex gap-3 overflow-hidden"
+                {(showWeightForm || showWorkoutForm) && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+                        onClick={() => { setShowWeightForm(false); setShowWorkoutForm(false); }}
                     >
-                        <input required type="number" step="any" placeholder="Peso (kg)" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} className="w-full bg-black/50 text-white text-sm rounded-lg px-4 py-2 outline-none" />
-                        <button type="submit" className="bg-blue-500 text-white px-4 rounded-lg font-bold"><Plus className="w-5 h-5" /></button>
-                    </motion.form>
-                )}
+                        <motion.div
+                            className="fighter-card w-full max-w-sm"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">
+                                    {showWeightForm ? 'Nuevo Registro Peso' : 'Log Entrenamiento'}
+                                </h3>
+                                <button onClick={() => { setShowWeightForm(false); setShowWorkoutForm(false); }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                    <Plus className="w-4 h-4 rotate-45 text-gray-500" />
+                                </button>
+                            </div>
 
-                {showWorkoutForm && (
-                    <motion.form
-                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                        onSubmit={handleAddWorkout} className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] mb-6 flex flex-col gap-3 overflow-hidden"
-                    >
-                        <select value={workoutType} onChange={(e) => setWorkoutType(e.target.value)} className="w-full bg-black/50 text-white text-sm rounded-lg px-4 py-3 outline-none">
-                            <option value="jiu-jitsu">Jiu-Jitsu / BJJ</option>
-                            <option value="gym">Gym / Pesas</option>
-                            <option value="running">Running / Cardio</option>
-                            <option value="box">Boxeo / Striking</option>
-                        </select>
-                        <div className="flex gap-3">
-                            <input required type="number" placeholder="Minutos" value={workoutDuration} onChange={(e) => setWorkoutDuration(e.target.value)} className="w-full bg-black/50 text-white text-sm rounded-lg px-4 py-2 outline-none" />
-                            <button type="submit" className="bg-purple-500 text-white px-6 rounded-lg font-bold"><Plus className="w-5 h-5" /></button>
-                        </div>
-                    </motion.form>
+                            {showWeightForm ? (
+                                <form onSubmit={handleAddWeight} className="space-y-4">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Peso en KG</label>
+                                    <input required type="number" step="any" autoFocus placeholder="0.0" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white text-2xl font-black rounded-xl px-4 py-5 outline-none focus:ring-1 focus:ring-blue-500 text-center" />
+                                    <button type="submit" className="fighter-btn-primary w-full bg-blue-600 hover:bg-blue-700">Actualizar Peso</button>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleAddWorkout} className="space-y-4">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Tipo de Sesión</label>
+                                    <select value={workoutType} onChange={(e) => setWorkoutType(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white text-sm font-bold rounded-xl px-4 py-4 outline-none appearance-none">
+                                        <option value="jiu-jitsu">Jiu-Jitsu / BJJ</option>
+                                        <option value="gym">Gym / Pesas</option>
+                                        <option value="running">Running / Cardio</option>
+                                        <option value="box">Boxeo / Striking</option>
+                                    </select>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Duración (Minutos)</label>
+                                    <input required type="number" placeholder="60" value={workoutDuration} onChange={(e) => setWorkoutDuration(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white text-2xl font-black rounded-xl px-4 py-5 outline-none focus:ring-1 focus:ring-purple-500 text-center" />
+                                    <button type="submit" className="fighter-btn-primary w-full bg-purple-600 hover:bg-purple-700">Guardar Sesión</button>
+                                </form>
+                            )}
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* SEGURIDAD DE DATOS (Fase 3) */}
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-green-500" /> Seguridad de Datos
-            </h2>
-            <div className="bg-[var(--color-fighter-surface)] p-4 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-8 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-bold text-white">Respaldo Local</p>
-                        <p className="text-[10px] text-gray-500">Descarga tus datos en un archivo JSON.</p>
-                    </div>
-                    <button onClick={handleExportData} className="flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-2 rounded-xl text-xs font-bold border border-green-500/20 active:scale-95 transition-all">
-                        <Download className="w-4 h-4" /> Exportar
-                    </button>
-                </div>
+            {/* DATA MANAGEMENT - PHASE 3 PREMIUM */}
+            <div className="flex items-center gap-2 mb-6 mt-4">
+                <Shield className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Bóveda de Datos</h2>
+            </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                    <div>
-                        <p className="text-sm font-bold text-white">Restaurar Datos</p>
-                        <p className="text-[10px] text-gray-500">Carga un archivo de respaldo previo.</p>
+            <div className="fighter-card !bg-transparent glass-panel border-white/5 overflow-hidden">
+                <div className="divide-y divide-white/5">
+                    <div className="flex items-center justify-between py-5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                <Download className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-white italic uppercase tracking-tighter leading-none mb-1">Backup JSON</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Descargar archivos locales</p>
+                            </div>
+                        </div>
+                        <button onClick={handleExportData} className="px-5 py-2.5 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all">
+                            Exportar
+                        </button>
                     </div>
-                    <label className="flex items-center gap-2 bg-blue-500/10 text-blue-500 px-4 py-2 rounded-xl text-xs font-bold border border-blue-500/20 cursor-pointer active:scale-95 transition-all">
-                        <Upload className="w-4 h-4" /> Importar
-                        <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
-                    </label>
-                </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                    <div>
-                        <p className="text-sm font-bold text-red-500">Reiniciar App</p>
-                        <p className="text-[10px] text-gray-500">Borra todos los datos del celular permanentemente.</p>
+                    <div className="flex items-center justify-between py-5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                <Upload className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-white italic uppercase tracking-tighter leading-none mb-1">Restaurar</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Cargar copia de seguridad</p>
+                            </div>
+                        </div>
+                        <label className="px-5 py-2.5 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-blue-400 rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer">
+                            Importar
+                            <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
+                        </label>
                     </div>
-                    <button onClick={handleResetApp} className="flex items-center gap-2 bg-red-900/10 text-red-500 px-4 py-2 rounded-xl text-xs font-bold border border-red-900/20 active:scale-95 transition-all">
-                        <RotateCcw className="w-4 h-4" /> Reiniciar
-                    </button>
+
+                    <div className="flex items-center justify-between py-5 border-t border-red-900/10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-red-900/10 flex items-center justify-center">
+                                <RotateCcw className="w-5 h-5 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-red-500 italic uppercase tracking-tighter leading-none mb-1">Hard Reset</p>
+                                <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest">Borrado irreversible</p>
+                            </div>
+                        </div>
+                        <button onClick={handleResetApp} className="px-5 py-2.5 bg-red-900/10 border border-red-500/10 text-[10px] font-black uppercase tracking-widest text-red-500 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all">
+                            Reiniciar
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Recents */}
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Últimas Actividades</h2>
-            <div className="space-y-3">
+            {/* Recents Timeline */}
+            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500 italic mb-6 mt-12">Timeline de Guerras</h2>
+            <div className="space-y-4">
                 {data.workouts.length === 0 ? (
-                    <p className="text-xs text-gray-600 bg-black/20 p-4 rounded-xl text-center">No hay entrenamientos recientes.</p>
+                    <div className="fighter-card bg-transparent border-dashed border-white/5 text-center py-12">
+                        <p className="text-gray-600 text-[10px] font-black uppercase tracking-widest italic">Aún no has sudado en el tatami.</p>
+                    </div>
                 ) : (
-                    data.workouts.map((w: any) => (
+                    data.workouts.map((w: any, idx: number) => (
                         <motion.div
                             initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                            key={w.id} className="bg-[var(--color-fighter-surface)] p-3 rounded-xl border border-[var(--color-fighter-surface-hover)] flex justify-between items-center"
+                            transition={{ delay: idx * 0.05 }}
+                            key={w.id}
+                            className="fighter-card group flex justify-between items-center border-white/5 hover:border-[var(--color-fighter-red)]/30"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-purple-900/20 flex items-center justify-center">
-                                    <Activity className="w-5 h-5 text-purple-400" />
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-900/20 to-transparent border border-purple-500/10 flex items-center justify-center">
+                                    <Activity className="w-6 h-6 text-purple-400 opacity-80" />
                                 </div>
-                                <div>
-                                    <p className="font-bold text-white uppercase text-sm">{w.type}</p>
-                                    <p className="text-xs text-gray-500">{new Date(w.date).toLocaleDateString()}</p>
+                                <div className="flex flex-col">
+                                    <p className="font-black text-white uppercase italic text-sm tracking-tight leading-none mb-1.5">{w.type}</p>
+                                    <div className="flex items-center gap-1.5 opacity-40">
+                                        <Calendar className="w-2.5 h-2.5 text-white" />
+                                        <span className="text-[9px] font-black uppercase text-white">{new Date(w.date).toLocaleDateString()}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <p className="text-lg font-black">{w.duration_minutes} <span className="text-[10px] text-gray-500 uppercase">min</span></p>
+                            <div className="text-right">
+                                <p className="text-2xl font-black text-white tracking-tighter leading-none mb-1">{w.duration_minutes}</p>
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">MINUTOS</p>
+                            </div>
                         </motion.div>
                     ))
                 )}
             </div>
-
         </motion.div>
     );
 }

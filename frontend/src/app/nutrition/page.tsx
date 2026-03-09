@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Utensils, Flame, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -80,138 +80,214 @@ export default function NutritionPage() {
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="p-6 pb-24"
+            className="p-6 pb-24 max-w-md mx-auto"
         >
-
             {/* Header */}
-            <div className="flex justify-between items-center mb-6 pt-4">
+            <div className="flex justify-between items-center mb-10 pt-4">
                 <div>
-                    <h1 className="text-2xl font-black tracking-tight text-white mb-0">Nutrición</h1>
-                    <p className="text-sm font-medium text-gray-400">Hoy</p>
+                    <span className="text-[var(--color-fighter-red)] text-[10px] font-black uppercase tracking-[0.2em] mb-1">Fuel Your Fight</span>
+                    <h1 className="text-3xl font-black text-white leading-none">Nutrición</h1>
                 </div>
                 <button
                     onClick={() => setShowAddForm(!showAddForm)}
-                    className="w-10 h-10 rounded-full bg-[var(--color-fighter-red)] text-white flex justify-center items-center shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-transform active:scale-95"
+                    className="w-12 h-12 rounded-2xl bg-[var(--color-fighter-red)] text-white flex justify-center items-center shadow-[0_0_20px_rgba(225,29,72,0.3)] transition-all active:scale-90"
                 >
-                    <Plus className="w-6 h-6" />
+                    <Plus className={`w-7 h-7 transition-transform duration-300 ${showAddForm ? 'rotate-45' : 'rotate-0'}`} />
                 </button>
             </div>
 
-            {/* Add Meal Form Modal / Inline */}
-            {showAddForm && (
-                <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-6 animate-in fade-in slide-in-from-top-4 relative">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-white">Registrar Comida</h3>
-                        <button onClick={() => {
-                            alert('Base de datos inicial precargada en caché Offline First.');
-                        }} className="text-[10px] bg-[var(--color-fighter-surface-hover)] px-2 py-1 rounded text-gray-400">
-                            + Cargar Base DB
-                        </button>
-                    </div>
-
-                    <form onSubmit={handleAddMeal} className="space-y-3 relative">
-                        <div className="relative">
-                            <input
-                                required type="text" placeholder="Buscar alimento... (Ej. Pechuga de Pollo 200g)"
-                                value={mealName} onChange={(e) => handleSearchFood(e.target.value)}
-                                className="w-full bg-black/50 text-white text-sm rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)]"
-                            />
-                            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                        </div>
-
-                        {searchResults.length > 0 && (
-                            <div className="absolute z-20 w-full bg-gray-900 border border-gray-700 rounded-lg mt-1 max-h-40 overflow-y-auto">
-                                {searchResults.map((f: any) => (
-                                    <div key={f.id} onClick={() => selectFood(f)} className="p-3 border-b border-gray-800 hover:bg-gray-800 cursor-pointer flex justify-between items-center text-sm">
-                                        <span className="font-bold text-white">{f.name} <span className="text-gray-500 font-normal ml-1">({f.default_portion})</span></span>
-                                        <span className="text-gray-400">{f.calories_per_portion} kcal</span>
-                                    </div>
-                                ))}
+            {/* Add Meal Form - Modern Modal-like */}
+            <AnimatePresence>
+                {showAddForm && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        className="fighter-card mb-10 overflow-visible relative z-30"
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Registrar Comida</h3>
+                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                <Utensils className="w-4 h-4 text-gray-500" />
                             </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <input
-                                required type="number" placeholder="Calorías totales"
-                                value={calories} onChange={(e) => setCalories(e.target.value)}
-                                className="w-full bg-black/50 text-white text-sm rounded-lg px-4 py-3 outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)]"
-                            />
-                            <select
-                                value={mealType} onChange={(e) => setMealType(e.target.value)}
-                                className="w-full bg-black/50 text-white text-sm rounded-lg px-4 py-3 outline-none"
-                            >
-                                <option value="breakfast">Desayuno</option>
-                                <option value="lunch">Comida / Almuerzo</option>
-                                <option value="dinner">Cena</option>
-                                <option value="snack">Snack</option>
-                            </select>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
-                            <input type="number" placeholder="Prot (g)" value={protein} onChange={(e) => setProtein(e.target.value)} className="w-full bg-black/50 text-blue-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
-                            <input type="number" placeholder="Carb (g)" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="w-full bg-black/50 text-green-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
-                            <input type="number" placeholder="Grasa (g)" value={fats} onChange={(e) => setFats(e.target.value)} className="w-full bg-black/50 text-yellow-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
-                        </div>
+                        <form onSubmit={handleAddMeal} className="space-y-4">
+                            <div className="relative">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Nombre del Alimento</label>
+                                <div className="relative">
+                                    <input
+                                        required type="text" placeholder="Ej. Pollo, Batido, Avena..."
+                                        value={mealName} onChange={(e) => handleSearchFood(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-10 pr-4 py-4 outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)] transition-all"
+                                    />
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                </div>
 
-                        <div className="flex items-center gap-2 mt-4 mb-2">
-                            <input type="checkbox" id="saveCustom" checked={saveAsCustom} onChange={(e) => setSaveAsCustom(e.target.checked)} className="w-4 h-4 text-[var(--color-fighter-red)] bg-black/50 border-gray-600 rounded focus:ring-[var(--color-fighter-red)] accent-[var(--color-fighter-red)]" />
-                            <label htmlFor="saveCustom" className="text-sm font-medium text-gray-400">Guardar receta en Mis Alimentos</label>
-                        </div>
+                                {/* Search Results Glass Popup */}
+                                <AnimatePresence>
+                                    {searchResults.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="absolute z-40 w-full glass-panel rounded-2xl mt-2 max-h-56 overflow-y-auto shadow-2xl border-white/10"
+                                        >
+                                            {searchResults.map((f: any) => (
+                                                <div
+                                                    key={f.id}
+                                                    onClick={() => selectFood(f)}
+                                                    className="p-4 border-b border-white/5 hover:bg-white/10 cursor-pointer flex justify-between items-center transition-colors"
+                                                >
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-white text-sm">{f.name}</span>
+                                                        <span className="text-[10px] text-gray-500 uppercase font-black">{f.default_portion}</span>
+                                                    </div>
+                                                    <span className="text-[var(--color-fighter-red)] font-black text-sm">{f.calories_per_portion} <span className="text-[10px] uppercase opacity-50">kcal</span></span>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
 
-                        <button type="submit" className="w-full bg-[var(--color-fighter-red)] text-white font-bold rounded-lg py-3 mt-2">
-                            GUARDAR COMIDA
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            {/* Summary Cards */}
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Resumen Consumido</h2>
-
-            {!loading && (
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="col-span-2 bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)]">
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Calorías Totales</p>
-                        <p className="text-3xl font-black text-white">{dailyData.summary.calories} <span className="text-sm font-medium text-gray-500">kcal</span></p>
-                    </div>
-                    <div className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] border-l-2 border-l-blue-500">
-                        <p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">Proteína</p>
-                        <p className="text-xl font-black text-white">{dailyData.summary.protein}g</p>
-                    </div>
-                    <div className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] border-l-2 border-l-green-500">
-                        <p className="text-xs text-green-400 font-bold uppercase tracking-wider mb-1">Carbos</p>
-                        <p className="text-xl font-black text-white">{dailyData.summary.carbs}g</p>
-                    </div>
-                </div>
-            )}
-
-            {/* History */}
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Historial de Hoy</h2>
-            <div className="space-y-3">
-                {!loading && dailyData.meals.length === 0 ? (
-                    <div className="text-center py-10 bg-[var(--color-fighter-surface)] rounded-xl border border-[var(--color-fighter-surface-hover)]">
-                        <p className="text-gray-500 text-sm">Aún no has registrado comidas hoy</p>
-                    </div>
-                ) : (
-                    dailyData.meals.map((meal: any) => (
-                        <div key={meal.id} className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] flex justify-between items-center">
-                            <div>
-                                <p className="font-bold text-white leading-tight mb-1">{meal.name}</p>
-                                <div className="flex gap-3 text-xs font-medium">
-                                    <span className="text-blue-400">P:{meal.protein}</span>
-                                    <span className="text-green-400">C:{meal.carbs}</span>
-                                    <span className="text-yellow-400">G:{meal.fats}</span>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Calorías</label>
+                                    <input
+                                        required type="number" placeholder="0"
+                                        value={calories} onChange={(e) => setCalories(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-4 outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Tipo</label>
+                                    <select
+                                        value={mealType} onChange={(e) => setMealType(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-4 outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)] appearance-none"
+                                    >
+                                        <option value="breakfast">Desayuno</option>
+                                        <option value="lunch">Almuerzo</option>
+                                        <option value="dinner">Cena</option>
+                                        <option value="snack">Snack</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-xl font-black text-white">{meal.calories}</p>
-                                <p className="text-[10px] uppercase text-gray-500 font-bold">kcal</p>
+
+                            <div>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block text-center">Macros de la Porción (g)</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <input type="number" placeholder="Prot" value={protein} onChange={(e) => setProtein(e.target.value)} className="bg-white/5 border border-white/10 text-red-400 text-sm font-black rounded-xl px-2 py-3 outline-none text-center focus:border-red-500/50" />
+                                    <input type="number" placeholder="Carb" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="bg-white/5 border border-white/10 text-blue-400 text-sm font-black rounded-xl px-2 py-3 outline-none text-center focus:border-blue-500/50" />
+                                    <input type="number" placeholder="Fat" value={fats} onChange={(e) => setFats(e.target.value)} className="bg-white/5 border border-white/10 text-emerald-400 text-sm font-black rounded-xl px-2 py-3 outline-none text-center focus:border-emerald-500/50" />
+                                </div>
                             </div>
-                        </div>
-                    ))
+
+                            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
+                                <input
+                                    type="checkbox" id="saveCustom"
+                                    checked={saveAsCustom} onChange={(e) => setSaveAsCustom(e.target.checked)}
+                                    className="w-5 h-5 rounded-lg accent-[var(--color-fighter-red)] cursor-pointer"
+                                />
+                                <label htmlFor="saveCustom" className="text-xs font-bold text-gray-400 cursor-pointer">Guardar en mis alimentos guardados</label>
+                            </div>
+
+                            <button type="submit" className="fighter-btn-primary w-full mt-4">
+                                Guardar Comida
+                            </button>
+                        </form>
+                    </motion.div>
                 )}
+            </AnimatePresence>
+
+            {/* Daily Totals - Glass Header */}
+            <div className="mb-10">
+                <div className="flex items-center gap-2 mb-4">
+                    <Flame className="w-5 h-5 text-[var(--color-fighter-red)]" />
+                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Resumen del Día</h2>
+                </div>
+
+                <div className="fighter-card relative overflow-hidden group border-white/10">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <TrendingUp className="w-16 h-16 text-white" />
+                    </div>
+                    <div className="flex flex-col mb-4">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Calorías</span>
+                        <div className="flex items-end gap-2">
+                            <span className="text-4xl font-black text-white">{dailyData.summary.calories}</span>
+                            <span className="text-sm font-black text-[var(--color-fighter-red)] mb-1.5 uppercase">KCAL</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/5">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-red-400 uppercase tracking-tighter mb-1">Proteína</span>
+                            <span className="text-lg font-black text-white">{dailyData.summary.protein}g</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-tighter mb-1">Carbos</span>
+                            <span className="text-lg font-black text-white">{dailyData.summary.carbs}g</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Grasas</span>
+                            <span className="text-lg font-black text-white">{dailyData.summary.fats}g</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+            {/* Timeline of Meals */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest">Línea de Tiempo</h2>
+                    <span className="text-[10px] font-bold text-gray-600 uppercase">{dailyData.meals.length} comidas</span>
+                </div>
+
+                {loading ? (
+                    <div className="flex justify-center p-12">
+                        <div className="w-8 h-8 border-2 border-[var(--color-fighter-red)] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : dailyData.meals.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="fighter-card text-center py-12 border-dashed border-white/10 bg-transparent"
+                    >
+                        <Info className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm font-bold italic tracking-tight">Sin registros para hoy. ¡Aliméntate bien!</p>
+                    </motion.div>
+                ) : (
+                    <div className="space-y-4">
+                        {dailyData.meals.map((meal: any, idx: number) => (
+                            <motion.div
+                                key={meal.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="fighter-card group relative hover:border-white/10"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-[var(--color-fighter-red)] uppercase text-[10px]">
+                                            {meal.meal_type.substring(0, 3)}
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-white leading-tight uppercase tracking-tight">{meal.name}</p>
+                                            <div className="flex gap-3 mt-1.5">
+                                                <span className="text-[9px] font-black text-red-400 uppercase">P: {meal.protein}g</span>
+                                                <span className="text-[9px] font-black text-blue-400 uppercase">C: {meal.carbs}g</span>
+                                                <span className="text-[9px] font-black text-emerald-400 uppercase">G: {meal.fats}g</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xl font-black text-white leading-none tracking-tighter">{meal.calories}</p>
+                                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-1">KCAL</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </motion.div>
     );
 }

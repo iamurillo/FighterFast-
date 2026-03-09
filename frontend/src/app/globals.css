@@ -3,26 +3,78 @@
 @theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-
-  --color-fighter-bg: #0A0A0A;
-  --color-fighter-surface: #141414;
-  --color-fighter-surface-hover: #1F1F1F;
-  --color-fighter-red: #E11D48;
-  --color-fighter-red-dark: #BE123C;
-  --color-fighter-green: #10B981;
 }
 
 :root {
-  --background: var(--color-fighter-bg);
-  --foreground: #EDEDED;
+  --color-fighter-background: #050505;
+  --color-fighter-surface: #121212;
+  --color-fighter-surface-hover: #1c1c1c;
+  --color-fighter-red: #e11d48;
+  --color-fighter-red-dark: #9f1239;
+  --color-fighter-red-glow: rgba(225, 29, 72, 0.4);
+  --color-fighter-text: #ffffff;
+  --color-fighter-text-muted: #9ca3af;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(18, 18, 18, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-blur: blur(12px);
+
+  --background: var(--color-fighter-background);
+  --foreground: var(--color-fighter-text);
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    background-color: var(--color-fighter-background);
+    color: var(--color-fighter-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .fighter-card {
+    background-color: var(--color-fighter-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+  }
+
+  .fighter-card:hover {
+    border-color: var(--color-fighter-red-glow);
+    box-shadow: 0 0 20px rgba(225, 29, 72, 0.1);
+  }
+
+  .fighter-btn-primary {
+    background-color: var(--color-fighter-red);
+    color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .fighter-btn-primary:hover {
+    background-color: var(--color-fighter-red-dark);
+  }
+
+  .fighter-btn-primary:active {
+    transform: scale(0.95);
+  }
+
+  .glass-panel {
+    background-color: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+  }
 }
 
 /* Base custom styles to ensure native look */
