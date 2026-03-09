@@ -15,6 +15,7 @@ export default function NutritionPage() {
     const [carbs, setCarbs] = useState('');
     const [fats, setFats] = useState('');
     const [mealType, setMealType] = useState('lunch');
+    const [saveAsCustom, setSaveAsCustom] = useState(false);
 
     const [searchResults, setSearchResults] = useState<any[]>([]);
 
@@ -58,8 +59,20 @@ export default function NutritionPage() {
             meal_type: mealType
         };
         db.addMeal(newMeal);
+
+        if (saveAsCustom) {
+            db.addCustomFood({
+                name: mealName,
+                calories_per_portion: Number(calories),
+                protein: Number(protein) || 0,
+                carbs: Number(carbs) || 0,
+                fats: Number(fats) || 0,
+                default_portion: '1 porción'
+            });
+        }
+
         setShowAddForm(false);
-        setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+        setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats(''); setSaveAsCustom(false);
         fetchDailyMeals();
     };
 
@@ -134,6 +147,11 @@ export default function NutritionPage() {
                             <input type="number" placeholder="Prot (g)" value={protein} onChange={(e) => setProtein(e.target.value)} className="w-full bg-black/50 text-blue-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
                             <input type="number" placeholder="Carb (g)" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="w-full bg-black/50 text-green-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
                             <input type="number" placeholder="Grasa (g)" value={fats} onChange={(e) => setFats(e.target.value)} className="w-full bg-black/50 text-yellow-400 text-sm rounded-lg px-3 py-3 outline-none text-center" />
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-4 mb-2">
+                            <input type="checkbox" id="saveCustom" checked={saveAsCustom} onChange={(e) => setSaveAsCustom(e.target.checked)} className="w-4 h-4 text-[var(--color-fighter-red)] bg-black/50 border-gray-600 rounded focus:ring-[var(--color-fighter-red)] accent-[var(--color-fighter-red)]" />
+                            <label htmlFor="saveCustom" className="text-sm font-medium text-gray-400">Guardar receta en Mis Alimentos</label>
                         </div>
 
                         <button type="submit" className="w-full bg-[var(--color-fighter-red)] text-white font-bold rounded-lg py-3 mt-2">

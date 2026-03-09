@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Droplet, Plus } from 'lucide-react';
 import { db } from '@/utils/storage';
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [macros, setMacros] = useState<any>(null);
+    const [water, setWater] = useState(0);
 
     // Fasting UI State
     const [isFasting, setIsFasting] = useState(false);
@@ -16,6 +17,7 @@ export default function DashboardPage() {
         if (storedUser) {
             setUser(storedUser);
             fetchMacrosData(storedUser);
+            setWater(db.getDailyWater());
         }
     }, []);
 
@@ -53,6 +55,11 @@ export default function DashboardPage() {
         db.stopFast();
         setIsFasting(false);
         setProgress(0);
+    };
+
+    const handleAddWater = (amount: number) => {
+        const newTotal = db.addWater(amount);
+        setWater(newTotal);
     };
 
     const circumference = 2 * Math.PI * 120; // 120 is the radius
@@ -163,6 +170,48 @@ export default function DashboardPage() {
                     <p className="text-sm font-bold text-gray-500">Calculando métricas...</p>
                 </div>
             )}
+
+            {/* Water Tracker Section */}
+            <h2 className="text-lg font-bold mb-4 mt-10">Hidratación (Agua)</h2>
+            <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)]">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <Droplet className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Total Consumido</p>
+                            <p className="text-2xl font-black text-white">{water} <span className="text-xs text-gray-500">ml</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-black/50 rounded-full h-3.5 mb-5 relative overflow-hidden border border-[var(--color-fighter-surface-hover)]">
+                    <div className="bg-blue-500 h-3.5 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${Math.min((water / 3500) * 100, 100)}%` }}></div>
+                </div>
+
+                <p className="text-xs text-center text-gray-500 font-medium mb-4">
+                    Objetivo mínimo: 3500 ml
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        onClick={() => handleAddWater(250)}
+                        className="flex items-center justify-center gap-2 bg-[var(--color-fighter-surface-hover)] hover:bg-black/50 border border-[var(--color-fighter-surface-hover)] p-3 rounded-xl transition-colors">
+                        <Plus className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-bold text-gray-300">250 ml</span>
+                    </button>
+                    <button
+                        onClick={() => handleAddWater(500)}
+                        className="flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 p-3 rounded-xl transition-colors">
+                        <Plus className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm font-bold text-blue-400">500 ml</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
     );
 }

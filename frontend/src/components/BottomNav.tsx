@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Timer, Utensils, Flame, User as UserIcon } from 'lucide-react';
+import { Timer, Utensils, Flame, User as UserIcon, Dumbbell } from 'lucide-react';
 
 export default function BottomNav() {
     const pathname = usePathname();
@@ -12,6 +12,7 @@ export default function BottomNav() {
         { name: 'Dieta', path: '/nutrition', icon: Utensils },
         { name: 'Peleador', path: '/fighter', icon: Flame },
         { name: 'Perfil', path: '/profile', icon: UserIcon },
+        { name: 'Herramientas', path: '/tools', icon: Dumbbell },
     ];
 
     return (

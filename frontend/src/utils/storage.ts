@@ -92,7 +92,12 @@ export const db = {
 
         if (!query) return [];
         const lowerQ = query.toLowerCase();
-        return mockFoods.filter(f => f.name.toLowerCase().includes(lowerQ));
+
+        // Incluir Custom Foods al buscar
+        const customFoods = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('customFoods') || '[]') : [];
+        const allFoods = [...customFoods, ...mockFoods];
+
+        return allFoods.filter((f: any) => f.name.toLowerCase().includes(lowerQ));
     },
 
     // ---- PROGRESS & METRICS ----
@@ -157,6 +162,58 @@ export const db = {
             history.push(log);
             localStorage.setItem('workoutHistory', JSON.stringify(history));
             return log;
+        }
+        return null;
+    },
+
+    // ---- FASE 2: NEW FEATURES ----
+
+    // WATER TRACKER
+    getDailyWater: (dateStr?: string) => {
+        if (typeof window === 'undefined') return 0;
+        const today = dateStr || new Date().toISOString().split('T')[0];
+        const allWater = JSON.parse(localStorage.getItem('waterLogs') || '{}');
+        return allWater[today] || 0; // return amounts in ml
+    },
+    addWater: (amount_ml: number) => {
+        if (typeof window !== 'undefined') {
+            const today = new Date().toISOString().split('T')[0];
+            const allWater = JSON.parse(localStorage.getItem('waterLogs') || '{}');
+            allWater[today] = (allWater[today] || 0) + amount_ml;
+            localStorage.setItem('waterLogs', JSON.stringify(allWater));
+            return allWater[today];
+        }
+        return 0;
+    },
+
+    // CUSTOM FOODS
+    getCustomFoods: () => {
+        if (typeof window === 'undefined') return [];
+        return JSON.parse(localStorage.getItem('customFoods') || '[]');
+    },
+    addCustomFood: (food: any) => {
+        if (typeof window !== 'undefined') {
+            const customFoods = JSON.parse(localStorage.getItem('customFoods') || '[]');
+            const newFood = { ...food, id: 'custom_' + Date.now() };
+            customFoods.push(newFood);
+            localStorage.setItem('customFoods', JSON.stringify(customFoods));
+            return newFood;
+        }
+        return null;
+    },
+
+    // TRAINING LOG (DIARY)
+    getTrainingLogs: () => {
+        if (typeof window === 'undefined') return [];
+        return JSON.parse(localStorage.getItem('trainingDiary') || '[]');
+    },
+    addTrainingDiaryLog: (date: string, discipline: string, notes: string) => {
+        if (typeof window !== 'undefined') {
+            const logs = JSON.parse(localStorage.getItem('trainingDiary') || '[]');
+            const newLog = { id: Date.now(), date, discipline, notes };
+            logs.push(newLog);
+            localStorage.setItem('trainingDiary', JSON.stringify(logs));
+            return newLog;
         }
         return null;
     }
