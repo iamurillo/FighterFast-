@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Lock, ChevronRight, Activity } from 'lucide-react';
+import { API_URL } from '@/utils/config';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -17,7 +18,6 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

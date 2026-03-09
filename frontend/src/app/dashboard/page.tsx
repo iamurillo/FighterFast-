@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Play } from 'lucide-react';
+import { API_URL } from '@/utils/config';
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
@@ -24,7 +25,6 @@ export default function DashboardPage() {
             const token = localStorage.getItem('fighterToken');
 
             // Traer Macros
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const resMacros = await fetch(`${API_URL}/api/nutrition/calculate`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -52,7 +52,6 @@ export default function DashboardPage() {
     const handleStartFast = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/fasts/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -67,7 +66,6 @@ export default function DashboardPage() {
     const handleStopFast = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             await fetch(`${API_URL}/api/fasts/stop`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }

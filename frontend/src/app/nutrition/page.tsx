@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, CheckCircle2 } from 'lucide-react';
+import { API_URL } from '@/utils/config';
 
 export default function NutritionPage() {
     const [dailyData, setDailyData] = useState<any>({ meals: [], summary: { calories: 0, protein: 0, carbs: 0, fats: 0 } });
@@ -29,7 +30,6 @@ export default function NutritionPage() {
         }
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/foods/search?q=${query}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -51,7 +51,6 @@ export default function NutritionPage() {
     const fetchDailyMeals = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/nutrition/daily-meals`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -70,7 +69,6 @@ export default function NutritionPage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/nutrition/meal`, {
                 method: 'POST',
                 headers: {
@@ -121,7 +119,6 @@ export default function NutritionPage() {
                         <h3 className="font-bold text-white">Registrar Comida</h3>
                         <button onClick={async () => {
                             const token = localStorage.getItem('fighterToken');
-                            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
                             await fetch(`${API_URL}/api/foods/seed`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
                             alert('Base de datos inicial de alimentos cargada');
                         }} className="text-[10px] bg-[var(--color-fighter-surface-hover)] px-2 py-1 rounded text-gray-400">

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User as UserIcon, LogOut, TrendingDown, Activity, Plus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { API_URL } from '@/utils/config';
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -24,7 +25,6 @@ export default function ProfilePage() {
     const fetchProfileData = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/progress`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -43,7 +43,6 @@ export default function ProfilePage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             await fetch(`${API_URL}/api/progress/weight`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -59,7 +58,6 @@ export default function ProfilePage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             await fetch(`${API_URL}/api/progress/workout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

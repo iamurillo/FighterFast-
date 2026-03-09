@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Activity, User, Lock, Mail, ChevronRight } from 'lucide-react';
+import { API_URL } from '@/utils/config';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -42,7 +43,6 @@ export default function RegisterPage() {
                 training_days: Number(formData.training_days)
             };
 
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const res = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
