@@ -351,13 +351,16 @@ export const db = {
         const totalWorkouts = workouts.length;
         const waterLogs = JSON.parse(localStorage.getItem('waterLogs') || '{}');
         const hydratedDays = Object.values(waterLogs).filter((w: any) => w >= 3000).length;
+        const techniques = JSON.parse(localStorage.getItem('techniqueVault') || '[]');
+        const weights = JSON.parse(localStorage.getItem('weightHistory') || '[]');
 
         return [
             { id: 'iron_will', name: 'Iron Will', desc: '5 días de racha entrenando', achieved: streak >= 5, icon: 'Zap' },
             { id: 'tatami_rat', name: 'Tatami Rat', desc: '20 sesiones de entrenamiento', achieved: totalWorkouts >= 20, icon: 'Activity' },
-            { id: 'blood_sweat', name: 'Blood & Sweat', desc: '50 asaltos/sesiones', achieved: totalWorkouts >= 50, icon: 'Shield' },
             { id: 'hydration_master', name: 'Hydro Master', desc: '5 días de hidratación óptima (3L+)', achieved: hydratedDays >= 5, icon: 'Droplet' },
-            { id: 'black_belt_mind', name: 'Black Belt Mind', desc: 'Alcanza el rango Black Belt (>100)', achieved: totalWorkouts >= 100, icon: 'Trophy' }
+            { id: 'tech_collector', name: 'Tech Collector', desc: '10 técnicas en tu biblioteca', achieved: techniques.length >= 10, icon: 'Bookmark' },
+            { id: 'weight_pro', name: 'Weight Pro', desc: '7 registros de peso realizados', achieved: weights.length >= 7, icon: 'Scale' },
+            { id: 'black_belt_mind', name: 'Black Belt Mind', desc: 'Alcanza 100 sesiones totales', achieved: totalWorkouts >= 100, icon: 'Trophy' }
         ];
     },
 

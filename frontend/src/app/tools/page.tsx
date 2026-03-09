@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Star, Bookmark } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Star, Bookmark, Smartphone, SmartphoneCharging } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -41,6 +41,7 @@ export default function ToolsPage() {
     const [isMuted, setIsMuted] = useState(false);
     const [isEMOM, setIsEMOM] = useState(false);
     const [isFocusMode, setIsFocusMode] = useState(false);
+    const [isVibrationEnabled, setIsVibrationEnabled] = useState(true);
 
     // AUDIO REFS
     const bellRef = React.useRef<HTMLAudioElement>(null);
@@ -56,6 +57,13 @@ export default function ToolsPage() {
                 warningRef.current.currentTime = 0;
                 warningRef.current.play().catch(() => { });
             }
+        } catch (e) { }
+    };
+
+    const triggerVibrate = (pattern: number | number[]) => {
+        if (!isVibrationEnabled || typeof window === 'undefined' || !navigator.vibrate) return;
+        try {
+            navigator.vibrate(pattern);
         } catch (e) { }
     };
 
@@ -85,10 +93,17 @@ export default function ToolsPage() {
                 // EMOM Logic: Bell every 60 seconds, no resting.
                 if (isEMOM && !isPrepping && nextTime > 0 && nextTime % 60 === 0) {
                     playSound('bell');
+                    triggerVibrate(500);
                 }
 
-                if (nextTime === 10 && !isResting && !isPrepping && !isEMOM) playSound('warning');
-                if (nextTime === 3 && isPrepping) playSound('prep');
+                if (nextTime === 10 && !isResting && !isPrepping && !isEMOM) {
+                    playSound('warning');
+                    triggerVibrate([100, 100, 100]);
+                }
+                if (nextTime === 3 && isPrepping) {
+                    playSound('prep');
+                    triggerVibrate(50);
+                }
                 setTimeLeft(nextTime);
             }, 1000);
         } else if (timerActive && timeLeft === 0) {
@@ -96,15 +111,18 @@ export default function ToolsPage() {
                 setIsPrepping(false);
                 setTimeLeft(roundTime);
                 playSound('bell');
+                triggerVibrate(800);
             } else if (!isResting) {
                 if (currentRound < totalRounds) {
                     setIsResting(true);
                     setTimeLeft(restTime);
                     playSound('bell');
+                    triggerVibrate([400, 200, 400]);
                 } else {
                     setTimerActive(false);
                     playSound('bell');
                     playSound('bell');
+                    triggerVibrate([800, 200, 800, 200, 800]);
                 }
             } else {
                 setIsResting(false);
@@ -112,6 +130,7 @@ export default function ToolsPage() {
                 setTimeLeft(10);
                 setCurrentRound((prev) => prev + 1);
                 playSound('prep');
+                triggerVibrate(150);
             }
         }
         return () => clearInterval(interval);
@@ -510,6 +529,9 @@ export default function ToolsPage() {
                             <div className="absolute top-4 right-4 flex gap-3">
                                 <button onClick={() => setIsFocusMode(!isFocusMode)} className="text-gray-600 hover:text-white transition-colors">
                                     <Maximize className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => setIsVibrationEnabled(!isVibrationEnabled)} className={`${isVibrationEnabled ? 'text-yellow-500' : 'text-gray-600'} hover:text-white transition-colors`}>
+                                    <SmartphoneCharging className="w-5 h-5" />
                                 </button>
                                 <button onClick={() => setIsMuted(!isMuted)} className="text-gray-600 hover:text-white transition-colors">
                                     {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}

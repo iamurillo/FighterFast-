@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy } from 'lucide-react';
+import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy, Share2, Bookmark, Scale } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -102,6 +102,20 @@ export default function ProfilePage() {
         }
     };
 
+    const handleShareIdentity = async () => {
+        if (typeof navigator === 'undefined' || !navigator.share) {
+            alert('Tu navegador no soporta compartir directamente. ¡Toma una captura de pantalla!');
+            return;
+        }
+        try {
+            await navigator.share({
+                title: 'Mi Rango en FighterFast 🥋',
+                text: `Soy ${data.user.name} (${db.getFighterRank().name.toUpperCase()}) en FighterFast. ¡Únete al tatami digital!`,
+                url: window.location.origin
+            });
+        } catch (e) { }
+    };
+
     if (loading || !data) return (
         <div className="min-h-screen bg-[var(--color-fighter-background)] flex items-center justify-center p-6 text-center">
             <div className="w-8 h-8 border-2 border-[var(--color-fighter-red)] border-t-transparent rounded-full animate-spin"></div>
@@ -178,7 +192,12 @@ export default function ProfilePage() {
                                     <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Identidad de Guerrero</p>
                                     <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">{data.user.name}</h2>
                                 </div>
-                                <Shield className="w-4 h-4 text-[var(--color-fighter-red)] opacity-50" />
+                                <div className="flex gap-2">
+                                    <button onClick={handleShareIdentity} className="text-gray-500 hover:text-white transition-colors">
+                                        <Share2 className="w-4 h-4" />
+                                    </button>
+                                    <Shield className="w-4 h-4 text-[var(--color-fighter-red)] opacity-50" />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-y-3 gap-x-4">
@@ -228,10 +247,19 @@ export default function ProfilePage() {
                             trophy.icon === 'Zap' ? Zap :
                                 trophy.icon === 'Activity' ? Activity :
                                     trophy.icon === 'Shield' ? Shield :
-                                        trophy.icon === 'Droplet' ? Droplet : Trophy;
+                                        trophy.icon === 'Droplet' ? Droplet :
+                                            trophy.icon === 'Bookmark' ? Bookmark :
+                                                trophy.icon === 'Scale' ? Scale : Trophy;
 
                         return (
                             <div key={idx} className={`fighter-card border border-white/5 relative overflow-hidden transition-all ${trophy.achieved ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border-yellow-500/30' : 'bg-white/5 opacity-50 grayscale'}`}>
+                                {trophy.achieved && (
+                                    <motion.div
+                                        animate={{ x: ['-100%', '200%'] }}
+                                        transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+                                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none"
+                                    />
+                                )}
                                 {trophy.achieved && <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-500/20 rounded-full blur-xl -mr-8 -mt-8"></div>}
                                 <div className="flex flex-col items-center text-center gap-2 relative z-10">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${trophy.achieved ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'bg-white/10 text-gray-500'}`}>
