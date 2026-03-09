@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, CheckCircle2, Utensils, Flame, Info, TrendingUp, Bookmark, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
+import { FighterToast } from '@/components/FighterToast';
+import { LevelUpModal } from '@/components/LevelUpModal';
 
 export default function NutritionPage() {
     const [dailyData, setDailyData] = useState<any>({ meals: [], summary: { calories: 0, protein: 0, carbs: 0, fats: 0 } });
@@ -28,6 +30,15 @@ export default function NutritionPage() {
     const [weeklyPlan, setWeeklyPlan] = useState<any>({});
     const [showWeeklyPlanner, setShowWeeklyPlanner] = useState(false);
     const [selectedDay, setSelectedDay] = useState('L');
+    const [editingMealId, setEditingMealId] = useState<number | null>(null);
+
+    // Toast & LevelUp States
+    const [toast, setToast] = useState<{ message: string; type: 'xp' | 'level' | 'success' | 'info'; xpAmount?: number; isVisible: boolean }>({
+        message: '', type: 'success', isVisible: false
+    });
+    const [levelUpData, setLevelUpData] = useState<{ level: number; isVisible: boolean }>({
+        level: 1, isVisible: false
+    });
 
     const QUICK_TEMPLATES = [
         { name: "Pechuga con Arroz", cal: 550, p: 45, c: 60, f: 8, type: 'lunch' },
@@ -112,7 +123,7 @@ export default function NutritionPage() {
     };
 
     const useRecipe = (recipe: any) => {
-        db.addMeal({
+        const xpResult = db.addMeal({
             name: recipe.name,
             calories: recipe.calories,
             protein: recipe.protein,
@@ -121,12 +132,24 @@ export default function NutritionPage() {
             meal_type: 'lunch' // Default
         });
         fetchDailyMeals();
-        alert(`Receta "${recipe.name}" añadida.`);
+        if (xpResult) {
+            setToast({
+                message: `Receta "${recipe.name}" añadida`,
+                type: 'xp',
+                xpAmount: xpResult.xpGained || 10,
+                isVisible: true
+            });
+            if (xpResult.leveledUp) {
+                setTimeout(() => {
+                    setLevelUpData({ level: xpResult.level, isVisible: true });
+                }, 1000);
+            }
+        }
     };
 
     const handleAddMeal = (e: React.FormEvent) => {
         e.preventDefault();
-        const newMeal = {
+        const mealData = {
             name: mealName,
             calories: Number(calories),
             protein: Number(protein) || 0,
@@ -134,9 +157,30 @@ export default function NutritionPage() {
             fats: Number(fats) || 0,
             meal_type: mealType
         };
-        db.addMeal(newMeal);
 
-        if (saveAsCustom) {
+        if (editingMealId) {
+            db.updateMeal(editingMealId, mealData);
+            setEditingMealId(null);
+            setToast({ message: 'Registro actualizado con éxito', type: 'success', isVisible: true });
+        } else {
+            const xpResult = db.addMeal(mealData);
+            if (xpResult) {
+                setToast({
+                    message: `Combustible registrado correctamente`,
+                    type: 'xp',
+                    xpAmount: xpResult.xpGained || 10,
+                    isVisible: true
+                });
+
+                if (xpResult.leveledUp) {
+                    setTimeout(() => {
+                        setLevelUpData({ level: xpResult.level, isVisible: true });
+                    }, 1000);
+                }
+            }
+        }
+
+        if (saveAsCustom && !editingMealId) {
             db.addCustomFood({
                 name: mealName,
                 calories_per_portion: Number(calories),
@@ -150,6 +194,25 @@ export default function NutritionPage() {
         setShowAddForm(false);
         setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats(''); setSaveAsCustom(false);
         fetchDailyMeals();
+    };
+
+    const handleDeleteDailyMeal = (id: number) => {
+        if (confirm('¿Eliminar esta comida del registro de hoy?')) {
+            db.deleteMeal(id);
+            fetchDailyMeals();
+        }
+    };
+
+    const startEditDailyMeal = (meal: any) => {
+        setEditingMealId(meal.id);
+        setMealName(meal.name);
+        setCalories(meal.calories.toString());
+        setProtein(meal.protein.toString());
+        setCarbs(meal.carbs.toString());
+        setFats(meal.fats.toString());
+        setMealType(meal.meal_type);
+        setShowAddForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -187,6 +250,76 @@ export default function NutritionPage() {
                 </div>
             </div>
 
+            {/* NUTRIENT DISTRIBUTION CHART (FASE 10) */}
+            {dailyData.meals.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="fighter-card mb-8 p-6 bg-gradient-to-br from-white/10 to-transparent border-white/10"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-[var(--color-fighter-red)]" />
+                            <h3 className="text-xs font-black text-white uppercase italic tracking-widest">Tactical Distribution</h3>
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Macro Balance</span>
+                    </div>
+
+                    <div className="flex items-center gap-8">
+                        {/* Donut Chart (CSS) */}
+                        <div className="relative w-32 h-32 shrink-0">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                <circle className="text-white/5" stroke="currentColor" strokeWidth="4" fill="transparent" r="16" cx="18" cy="18" />
+
+                                {(() => {
+                                    const total = dailyData.summary.protein + dailyData.summary.carbs + dailyData.summary.fats || 1;
+                                    const pP = (dailyData.summary.protein / total) * 100;
+                                    const pC = (dailyData.summary.carbs / total) * 100;
+                                    const pF = (dailyData.summary.fats / total) * 100;
+
+                                    const offsetC = pP;
+                                    const offsetF = pP + pC;
+
+                                    return (
+                                        <>
+                                            <circle className="text-red-500" stroke="currentColor" strokeWidth="4" strokeDasharray={`${pP} 100`} strokeDashoffset="0" fill="transparent" r="16" cx="18" cy="18" strokeLinecap="round" />
+                                            <circle className="text-blue-500" stroke="currentColor" strokeWidth="4" strokeDasharray={`${pC} 100`} strokeDashoffset={`-${offsetC}`} fill="transparent" r="16" cx="18" cy="18" strokeLinecap="round" />
+                                            <circle className="text-emerald-500" stroke="currentColor" strokeWidth="4" strokeDasharray={`${pF} 100`} strokeDashoffset={`-${offsetF}`} fill="transparent" r="16" cx="18" cy="18" strokeLinecap="round" />
+                                        </>
+                                    );
+                                })()}
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-[10px] font-black text-white leading-none">TARGET</span>
+                                <span className="text-[8px] font-bold text-gray-500 uppercase">Optimal</span>
+                            </div>
+                        </div>
+
+                        {/* Legend */}
+                        <div className="flex-1 space-y-3">
+                            {(() => {
+                                const total = dailyData.summary.protein + dailyData.summary.carbs + dailyData.summary.fats || 1;
+                                return [
+                                    { label: 'Proteína', color: 'bg-red-500', val: dailyData.summary.protein, pct: Math.round((dailyData.summary.protein / total) * 100) },
+                                    { label: 'Carbos', color: 'bg-blue-500', val: dailyData.summary.carbs, pct: Math.round((dailyData.summary.carbs / total) * 100) },
+                                    { label: 'Grasas', color: 'bg-emerald-500', val: dailyData.summary.fats, pct: Math.round((dailyData.summary.fats / total) * 100) }
+                                ].map((m, i) => (
+                                    <div key={i} className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${m.color}`} />
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{m.label}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs font-black text-white leading-none">{m.pct}%</p>
+                                        </div>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Add Meal Form - Modern Modal-like */}
             <AnimatePresence>
                 {showAddForm && (
@@ -197,7 +330,9 @@ export default function NutritionPage() {
                         className="fighter-card mb-10 overflow-visible relative z-30"
                     >
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Registrar Comida</h3>
+                            <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">
+                                {editingMealId ? 'Editar Combustible' : 'Registrar Comida'}
+                            </h3>
                             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
                                 <Utensils className="w-4 h-4 text-gray-500" />
                             </div>
@@ -273,18 +408,31 @@ export default function NutritionPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
-                                <input
-                                    type="checkbox" id="saveCustom"
-                                    checked={saveAsCustom} onChange={(e) => setSaveAsCustom(e.target.checked)}
-                                    className="w-5 h-5 rounded-lg accent-[var(--color-fighter-red)] cursor-pointer"
-                                />
-                                <label htmlFor="saveCustom" className="text-xs font-bold text-gray-400 cursor-pointer">Guardar en mis alimentos guardados</label>
+                            <div className="flex gap-2">
+                                <button type="submit" className="flex-[2] bg-[var(--color-fighter-red)] text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs hover:shadow-[0_0_20px_rgba(230,57,70,0.3)] transition-all">
+                                    {editingMealId ? 'Actualizar Registro' : 'Registrar Comida'}
+                                </button>
+                                {editingMealId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowAddForm(false); setEditingMealId(null); setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats(''); }}
+                                        className="flex-1 bg-white/5 text-gray-500 font-black py-4 rounded-xl uppercase tracking-widest text-[10px] hover:text-white transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                )}
                             </div>
 
-                            <button type="submit" className="fighter-btn-primary w-full mt-4">
-                                Guardar Comida
-                            </button>
+                            {!editingMealId && (
+                                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
+                                    <input
+                                        type="checkbox" id="saveCustom"
+                                        checked={saveAsCustom} onChange={(e) => setSaveAsCustom(e.target.checked)}
+                                        className="w-5 h-5 rounded-lg accent-[var(--color-fighter-red)] cursor-pointer"
+                                    />
+                                    <label htmlFor="saveCustom" className="text-xs font-bold text-gray-400 cursor-pointer">Guardar en mis alimentos guardados</label>
+                                </div>
+                            )}
                         </form>
                     </motion.div>
                 )}
@@ -593,9 +741,15 @@ export default function NutritionPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-black text-white leading-none tracking-tighter">{meal.calories}</p>
-                                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-1">KCAL</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="text-xl font-black text-white leading-none tracking-tighter">{meal.calories}</p>
+                                            <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-1">KCAL</p>
+                                        </div>
+                                        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => startEditDailyMeal(meal)} className="p-1 bg-white/5 rounded hover:text-white text-gray-500"><Info className="w-3 h-3" /></button>
+                                            <button onClick={() => handleDeleteDailyMeal(meal.id)} className="p-1 bg-red-900/10 rounded hover:text-red-500 text-red-900"><Plus className="w-3 h-3 rotate-45" /></button>
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -603,6 +757,21 @@ export default function NutritionPage() {
                     </div>
                 )}
             </div>
+
+            {/* Notifications & Modals */}
+            <FighterToast
+                isVisible={toast.isVisible}
+                message={toast.message}
+                type={toast.type}
+                xpAmount={toast.xpAmount}
+                onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+            />
+
+            <LevelUpModal
+                isVisible={levelUpData.isVisible}
+                level={levelUpData.level}
+                onClose={() => setLevelUpData(prev => ({ ...prev, isVisible: false }))}
+            />
         </motion.div>
     );
 }

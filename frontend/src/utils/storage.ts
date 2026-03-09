@@ -3,7 +3,12 @@ export const db = {
     getUser: () => {
         if (typeof window === 'undefined') return null;
         const data = localStorage.getItem('fighterUser');
-        return data ? JSON.parse(data) : null;
+        const user = data ? JSON.parse(data) : null;
+        if (user && !user.xp) {
+            user.xp = 0;
+            user.level = 1;
+        }
+        return user;
     },
     saveUser: (user: any) => {
         if (typeof window !== 'undefined') {
@@ -53,10 +58,54 @@ export const db = {
         const data = localStorage.getItem('fighterSettings');
         return data ? JSON.parse(data) : { units: 'metric', manualMacros: false, theme: 'combat' };
     },
+
+    // --- GAME PLAN (FASE 10) ---
+    getGamePlan: () => {
+        if (typeof window === 'undefined') return { striking: '', ground: '', emergency: '', lastUpdated: new Date().toISOString() };
+        const item = localStorage.getItem('fighterGamePlan');
+        return item ? JSON.parse(item) : {
+            striking: '',
+            ground: '',
+            emergency: '',
+            lastUpdated: new Date().toISOString()
+        };
+    },
+    setGamePlan: (plan: any) => {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('fighterGamePlan', JSON.stringify({ ...plan, lastUpdated: new Date().toISOString() }));
+    },
     saveSettings: (settings: any) => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('fighterSettings', JSON.stringify(settings));
         }
+    },
+
+    addXP: (amount: number) => {
+        if (typeof window === 'undefined') return { leveledUp: false, level: 1 };
+        const user = db.getUser();
+        if (user) {
+            const streak = db.getTrainingStreak();
+            // Multiplier: +10% XP for every 3 days of streak, max +50%
+            const multiplier = 1 + Math.min(Math.floor(streak / 3) * 0.1, 0.5);
+            const finalAmount = Math.round(amount * multiplier);
+
+            const oldLevel = user.level || 1;
+            user.xp = (user.xp || 0) + finalAmount;
+
+            // Level logic: 100 XP per level
+            const newLevel = Math.floor(user.xp / 100) + 1;
+            user.level = newLevel;
+
+            localStorage.setItem('fighterUser', JSON.stringify(user));
+
+            return {
+                leveledUp: newLevel > oldLevel,
+                level: newLevel,
+                xpGained: finalAmount,
+                currentXP: user.xp
+            };
+        }
+        return { leveledUp: false, level: 1 };
     },
 
     clearUser: () => {
@@ -115,20 +164,49 @@ export const db = {
             const newMeal = { ...meal, id: Date.now() };
             allMeals[today].push(newMeal);
             localStorage.setItem('meals', JSON.stringify(allMeals));
+
+            // Add XP
+            db.addXP(10);
+
             return newMeal;
         }
         return null;
+    },
+    updateMeal: (id: number, data: any) => {
+        if (typeof window !== 'undefined') {
+            const today = new Date().toISOString().split('T')[0];
+            const allMeals = JSON.parse(localStorage.getItem('meals') || '{}');
+            if (allMeals[today]) {
+                allMeals[today] = allMeals[today].map((m: any) =>
+                    m.id === id ? { ...m, ...data } : m
+                );
+                localStorage.setItem('meals', JSON.stringify(allMeals));
+            }
+        }
+    },
+    deleteMeal: (id: number) => {
+        if (typeof window !== 'undefined') {
+            const today = new Date().toISOString().split('T')[0];
+            const allMeals = JSON.parse(localStorage.getItem('meals') || '{}');
+            if (allMeals[today]) {
+                allMeals[today] = allMeals[today].filter((m: any) => m.id !== id);
+                localStorage.setItem('meals', JSON.stringify(allMeals));
+            }
+        }
     },
 
     // ---- RECIPES & WEEKLY PLAN ----
     getRecipes: () => {
         if (typeof window === 'undefined') return [];
         const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-        if (recipes.length === 0) {
+        if (recipes.length <= 3) {
             const masterRecipes = [
                 { id: 101, name: "Avena Pro Sparring", calories: 450, protein: 25, carbs: 60, fats: 10, description: "Bowl de avena con proteína en polvo, plátano y un puñado de nueces. Energía de larga duración para el tatami." },
                 { id: 102, name: "Ensalada Elite Atún", calories: 380, protein: 40, carbs: 15, fats: 18, description: "Atún al natural, espinacas, aguacate y huevo cocido. Macro-nutrientes limpios para recuperación muscular." },
-                { id: 103, name: "Smoothie Post-Guerra", calories: 320, protein: 30, carbs: 40, fats: 5, description: "Bayas congeladas, leche de almendras y scoop de whey. Rápida absorción tras entrenamiento intenso." }
+                { id: 103, name: "Smoothie Post-Guerra", calories: 320, protein: 30, carbs: 40, fats: 5, description: "Bayas congeladas, leche de almendras y scoop de whey. Rápida absorción tras entrenamiento intenso." },
+                { id: 104, name: "Poke del Luchador", calories: 650, protein: 35, carbs: 80, fats: 15, description: "Salmón, arroz de sushi, edamame, mango y alga nori. El combustible definitivo." },
+                { id: 105, name: "Pasta Pre-Comp", calories: 720, protein: 28, carbs: 110, fats: 12, description: "Pasta integral con salsa pomodoro ligera y pechuga de pollo. Carga de glucógeno para el día del evento." },
+                { id: 106, name: "Tortilla Power", calories: 280, protein: 35, carbs: 5, fats: 12, description: "4 claras, 1 huevo entero, espinacas y pavo picado. Desayuno de campeones bajo en carbos." }
             ];
             localStorage.setItem('recipes', JSON.stringify(masterRecipes));
             return masterRecipes;

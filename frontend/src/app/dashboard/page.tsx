@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Play, Droplet, Plus, Zap, TrendingUp, Trophy, Utensils, ChevronRight, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
+import { FighterToast } from '@/components/FighterToast';
+import { LevelUpModal } from '@/components/LevelUpModal';
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
@@ -18,6 +20,14 @@ export default function DashboardPage() {
     const [isFasting, setIsFasting] = useState(false);
     const [progress, setProgress] = useState(0);
     const [targetHours, setTargetHours] = useState(16);
+
+    // Toast & LevelUp States
+    const [toast, setToast] = useState<{ message: string; type: 'xp' | 'level' | 'success' | 'info'; xpAmount?: number; isVisible: boolean }>({
+        message: '', type: 'success', isVisible: false
+    });
+    const [levelUpData, setLevelUpData] = useState<{ level: number; isVisible: boolean }>({
+        level: 1, isVisible: false
+    });
 
     useEffect(() => {
         const storedUser = db.getUser();
@@ -103,6 +113,13 @@ export default function DashboardPage() {
     const handleAddWater = (amount: number) => {
         const newTotal = db.addWater(amount);
         setWater(newTotal);
+        const xpResult = db.addXP(5); // +5 XP por hidratación
+        if (xpResult) {
+            setToast({ message: 'Guerrero Hidratado', type: 'xp', xpAmount: xpResult.xpGained, isVisible: true });
+            if (xpResult.leveledUp) {
+                setTimeout(() => setLevelUpData({ level: xpResult.level, isVisible: true }), 1000);
+            }
+        }
     };
 
     const handleSubtractWater = (amount: number) => {
@@ -154,7 +171,24 @@ export default function DashboardPage() {
                             </div>
                         )}
                     </div>
-                    <h1 className="text-3xl font-black text-white leading-none">Hola, {user?.name?.split(' ')[0] || 'Atleta'}</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-black text-white leading-none italic uppercase tracking-tighter">
+                            Hola, {user?.name?.split(' ')[0] || 'Atleta'}
+                        </h1>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                <Trophy className="w-2 h-2 text-amber-500" />
+                                <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest">LVL {user?.level || 1}</span>
+                            </div>
+                            <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-amber-500"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(user?.xp % 100) || 0}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] to-orange-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
@@ -445,6 +479,21 @@ export default function DashboardPage() {
                     </button>
                 </div>
             </div>
+
+            {/* Notifications & Modals */}
+            <FighterToast
+                isVisible={toast.isVisible}
+                message={toast.message}
+                type={toast.type}
+                xpAmount={toast.xpAmount}
+                onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+            />
+
+            <LevelUpModal
+                isVisible={levelUpData.isVisible}
+                level={levelUpData.level}
+                onClose={() => setLevelUpData(prev => ({ ...prev, isVisible: false }))}
+            />
         </motion.div>
     );
 }

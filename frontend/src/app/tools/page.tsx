@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Star, Bookmark, Smartphone, SmartphoneCharging } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Star, Bookmark, Smartphone, SmartphoneCharging, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function ToolsPage() {
-    const [activeTab, setActiveTab] = useState<'diary' | 'techniques' | 'timer' | 'calculator'>('diary');
+    const [activeTab, setActiveTab] = useState<'diary' | 'techniques' | 'timer' | 'calculator' | 'game-plan'>('diary');
     const [user, setUser] = useState<any>(null);
 
     // --- DIARY STATE ---
@@ -42,6 +42,9 @@ export default function ToolsPage() {
     const [isEMOM, setIsEMOM] = useState(false);
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [isVibrationEnabled, setIsVibrationEnabled] = useState(true);
+
+    // --- GAME PLAN STATE (FASE 10) ---
+    const [gamePlan, setGamePlan] = useState<any>({ striking: '', ground: '', emergency: '' });
 
     // AUDIO REFS
     const bellRef = React.useRef<HTMLAudioElement>(null);
@@ -82,6 +85,18 @@ export default function ToolsPage() {
     useEffect(() => {
         db.setTimerConfig({ roundTime, restTime, totalRounds });
     }, [roundTime, restTime, totalRounds]);
+
+    // Load & Save Game Plan
+    useEffect(() => {
+        const storedPlan = db.getGamePlan();
+        if (storedPlan) setGamePlan(storedPlan);
+    }, []);
+
+    const handleUpdatePlan = (key: string, value: string) => {
+        const newPlan = { ...gamePlan, [key]: value };
+        setGamePlan(newPlan);
+        db.setGamePlan(newPlan);
+    };
 
 
     useEffect(() => {
@@ -300,6 +315,15 @@ export default function ToolsPage() {
                         }`}
                 >
                     <Scale className="w-4 h-4" /> Corte
+                </button>
+                <button
+                    onClick={() => setActiveTab('game-plan')}
+                    className={`min-w-[80px] flex-1 py-3 px-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5 flex-col ${activeTab === 'game-plan'
+                        ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'text-gray-500 hover:text-gray-300'
+                        }`}
+                >
+                    <Trophy className="w-4 h-4" /> Game Plan
                 </button>
             </div>
 
@@ -715,6 +739,70 @@ export default function ToolsPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {/* --- GAME PLAN TAB --- */}
+            {activeTab === 'game-plan' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-amber-500/20 rounded-xl border border-amber-500/30">
+                            <Trophy className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">War Room Plan</h2>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Estrategia de Combate</p>
+                        </div>
+                    </div>
+
+                    {/* Striking Plan */}
+                    <div className="fighter-card p-6 bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Zap className="w-4 h-4 text-red-500" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Striking Strategy</h3>
+                        </div>
+                        <textarea
+                            value={gamePlan.striking}
+                            onChange={(e) => handleUpdatePlan('striking', e.target.value)}
+                            placeholder="Ej: Mantener distancia, jabs constantes, buscar el leg kick al final de las combinaciones..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-red-500/50 outline-none transition-all min-h-[100px]"
+                        />
+                    </div>
+
+                    {/* Ground Plan */}
+                    <div className="fighter-card p-6 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Dumbbell className="w-4 h-4 text-blue-500" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Grappling Strategy</h3>
+                        </div>
+                        <textarea
+                            value={gamePlan.ground}
+                            onChange={(e) => handleUpdatePlan('ground', e.target.value)}
+                            placeholder="Ej: Pull guard si hay presión, atacar omoplata desde cerrada, buscar el back en transiciones..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all min-h-[100px]"
+                        />
+                    </div>
+
+                    {/* Emergency Plan */}
+                    <div className="fighter-card p-6 bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Emergency Protocol</h3>
+                        </div>
+                        <textarea
+                            value={gamePlan.emergency}
+                            onChange={(e) => handleUpdatePlan('emergency', e.target.value)}
+                            placeholder="Ej: Si estoy cansado, amarrar en el clinch. Si gano por puntos, no arriesgar los últimos 30s..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-amber-500/50 outline-none transition-all min-h-[100px]"
+                        />
+                    </div>
+
+                    <div className="text-center pb-8">
+                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest italic">Última actualización táctica: {new Date(gamePlan.lastUpdated).toLocaleString()}</p>
+                    </div>
+                </motion.div>
+            )}
         </motion.div>
     );
 }

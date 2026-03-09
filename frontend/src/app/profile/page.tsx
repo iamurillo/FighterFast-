@@ -100,6 +100,33 @@ export default function ProfilePage() {
     const [bodyFat, setBodyFat] = useState<string>('');
     const [muscleMass, setMuscleMass] = useState<string>('');
 
+    // Tactical Analysis (Fase 10)
+    const getCombatTitle = () => {
+        if (!data) return "Guerrero";
+        const techDist = getTechniqueDistribution();
+        const totalTechs = techDist.attacks + techDist.defenses + techDist.transitions;
+
+        if (totalTechs > 10) return "Maestro de Tatami";
+        if (techDist.attacks > 5) return "Submission Hunter";
+        if (streak > 7) return "Metabolic Machine";
+        if (data.trophies.length > 5) return "Champion Spirit";
+        return "Promesa del BJJ";
+    };
+
+    const getTechniqueDistribution = () => {
+        // Simulación de conteo basado en lo que renderizamos (en un sistema real esto vendría de la DB)
+        // Por ahora lo calculamos estáticamente para la Fase 10, pero preparándolo para persistencia
+        return { attacks: 4, defenses: 4, transitions: 3 };
+    };
+
+    const getFighterArchetype = () => {
+        const dist = getTechniqueDistribution();
+        if (dist.attacks > dist.defenses && dist.attacks > dist.transitions) return "Finalizador Agresivo";
+        if (dist.defenses > dist.attacks) return "Escudo Impenetrable";
+        if (dist.transitions > dist.attacks) return "Estratega Fluido";
+        return "Guerrero Equilibrado";
+    };
+
     const handleResetApp = () => {
         if (confirm('¿ESTÁS SEGURO? Se borrarán todos tus entrenamientos, comidas y registros permanentemente.')) {
             localStorage.clear();
@@ -197,14 +224,21 @@ export default function ProfilePage() {
                         <div className="flex-1 space-y-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Identidad de Guerrero</p>
+                                    <p className="text-[7px] font-black text-amber-500 uppercase tracking-[0.2em] mb-0.5 italic">{getCombatTitle()}</p>
                                     <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">{data.user.name}</h2>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={handleShareIdentity} className="text-gray-500 hover:text-white transition-colors">
-                                        <Share2 className="w-4 h-4" />
-                                    </button>
-                                    <Shield className="w-4 h-4 text-[var(--color-fighter-red)] opacity-50" />
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-1 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                                        <Trophy className="w-2.5 h-2.5 text-amber-500" />
+                                        <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">LVL {data.user.level || 1}</span>
+                                    </div>
+                                    <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className="h-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${(data.user.xp % 100) || 0}%` }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -214,19 +248,19 @@ export default function ProfilePage() {
                                     <p className="text-[10px] font-black text-white uppercase italic">{db.getWeightClass(data.user.current_weight).name}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Racha</p>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Racha de Guerra</p>
                                     <div className="flex items-center gap-1">
                                         <Zap className="w-2 h-2 text-orange-500 fill-orange-500" />
                                         <p className="text-[10px] font-black text-white uppercase italic">{streak} DÍAS</p>
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Disciplina</p>
-                                    <p className="text-[10px] font-black text-white uppercase italic">{data.user.training_type}</p>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">XP Total</p>
+                                    <p className="text-[10px] font-black text-amber-500 uppercase italic">{data.user.xp} PTS</p>
                                 </div>
                                 <div>
                                     <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Status</p>
-                                    <p className="text-[10px] font-black text-emerald-400 uppercase italic">Active Duty</p>
+                                    <p className="text-[10px] font-black text-emerald-400 uppercase italic">On the Mats</p>
                                 </div>
                             </div>
                         </div>
@@ -284,7 +318,133 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* Target & Current Weight Card - Glass */}
+            {/* BJJ TECHNIQUE VAULT - CATEGORIZED & EXPANDED */}
+            <div className="mb-10">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-500/10 rounded-xl border border-purple-500/20">
+                            <Shield className="w-5 h-5 text-purple-400" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Conocimiento</p>
+                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">BJJ Technique Vault</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    {/* Attacks */}
+                    <div>
+                        <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-3 ml-1">Fuego (Ataques)</h3>
+                        <div className="grid grid-cols-1 gap-3">
+                            {[
+                                { name: 'Triángulo desde Guardia', level: 'Básico', tip: 'Controla el brazo opuesto para cerrar el ángulo.' },
+                                { name: 'Kimura desde Kimura Trap', level: 'Avanzado', tip: 'Usa tu peso para aislar el hombro, no solo fuerza de brazos.' },
+                                { name: 'Ezequiel Choke (No-Gi)', level: 'Maestro', tip: 'Presión constante en las carótidas, no en la tráquea.' },
+                                { name: 'Heel Hook desde 50/50', level: 'Elite', tip: 'Asegura el talón con tu axila y gira tu cadera explosivamente.' }
+                            ].map((t, i) => (
+                                <div key={i} className="fighter-card border border-white/5 bg-white/5 p-4 flex justify-between items-center group hover:border-red-500/30 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-white uppercase italic tracking-tight">{t.name}</span>
+                                        <span className="text-[9px] text-gray-500 font-bold mt-1 uppercase">{t.tip}</span>
+                                    </div>
+                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${t.level === 'Maestro' || t.level === 'Elite' ? 'border-amber-500/50 text-amber-500' : 'border-white/10 text-gray-400'}`}>{t.level}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Defense */}
+                    <div>
+                        <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-3 ml-1">Escudo (Defensas)</h3>
+                        <div className="grid grid-cols-1 gap-3">
+                            {[
+                                { name: 'Escape de Montada (Upa)', level: 'Básico', tip: 'Puente explosivo y captura el brazo del mismo lado.' },
+                                { name: 'Defensa de Back Take', level: 'Intermedio', tip: 'Manten tus manos en sus solapas/cuello antes de que cierre el body triangle.' },
+                                { name: 'Escape de Armbar (Hitchhiker)', level: 'Maestro', tip: 'Gira el pulgar hacia afuera y corre circularmente hacia su cabeza.' },
+                                { name: 'Defensa de North-South Choke', level: 'Avanzado', tip: 'Crea espacio con tu mano libre y gira tu cadera para recuperar guardia.' }
+                            ].map((t, i) => (
+                                <div key={i} className="fighter-card border border-white/5 bg-white/5 p-4 flex justify-between items-center group hover:border-blue-500/30 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-white uppercase italic tracking-tight">{t.name}</span>
+                                        <span className="text-[9px] text-gray-500 font-bold mt-1 uppercase">{t.tip}</span>
+                                    </div>
+                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${t.level === 'Maestro' ? 'border-amber-500/50 text-amber-500' : 'border-white/10 text-gray-400'}`}>{t.level}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Transitions */}
+                    <div>
+                        <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-3 ml-1">Fluidez (Transiciones)</h3>
+                        <div className="grid grid-cols-1 gap-3">
+                            {[
+                                { name: 'Paso de Guardia (Torreando)', level: 'Dinámico', tip: 'Mantén la presión en las rodillas y muévete lateralmente.' },
+                                { name: 'Berimbolo a la Espalda', level: 'Elite', tip: 'El secreto está en el grip del pantalón y la rotación de cadera.' },
+                                { name: 'Imanari Roll', level: 'Elite', tip: 'Rodada profunda para entrar directamente a ataques de pierna.' }
+                            ].map((t, i) => (
+                                <div key={i} className="fighter-card border border-white/5 bg-white/5 p-4 flex justify-between items-center group hover:border-emerald-500/30 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-white uppercase italic tracking-tight">{t.name}</span>
+                                        <span className="text-[9px] text-gray-500 font-bold mt-1 uppercase">{t.tip}</span>
+                                    </div>
+                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${t.level === 'Elite' ? 'border-amber-500/50 text-amber-500' : 'border-white/10 text-gray-400'}`}>{t.level}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* TACTICAL ANALYSIS - FASE 10 */}
+            <motion.div
+                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                className="fighter-card mb-10 p-6 bg-gradient-to-br from-indigo-500/10 to-transparent border-indigo-500/20 shadow-[0_20px_50px_rgba(99,102,241,0.1)] relative overflow-hidden"
+            >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+                <div className="flex items-center gap-3 mb-6 relative z-10">
+                    <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
+                        <Activity className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Combat Intel</p>
+                        <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Análisis Táctico</h2>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="w-20 h-20 rounded-2xl border border-indigo-500/30 flex items-center justify-center bg-black/40 relative shadow-inner">
+                        <Zap className="w-8 h-8 text-indigo-500 animate-pulse" />
+                        <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-500 shadow-lg">PRO</div>
+                    </div>
+
+                    <div className="flex-1">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Arquetipo de Lucha</p>
+                        <p className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">{getFighterArchetype()}</p>
+                        <div className="flex items-center gap-2">
+                            <div className="flex -space-x-1">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className={`w-2 h-2 rounded-full border border-black ${i < 4 ? 'bg-indigo-500' : 'bg-white/10'}`} />
+                                ))}
+                            </div>
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Nivel Táctico A+</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-white/5 grid grid-cols-2 gap-4 relative z-10">
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-indigo-500/30 transition-all">
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2 text-center group-hover:text-indigo-400 transition-colors">Efectividad Ataque</p>
+                        <p className="text-lg font-black text-white uppercase italic text-center">85%</p>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-indigo-500/30 transition-all">
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2 text-center group-hover:text-indigo-400 transition-colors">Control Guardia</p>
+                        <p className="text-lg font-black text-white uppercase italic text-center">92%</p>
+                    </div>
+                </div>
+            </motion.div>
             <motion.div
                 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                 className="fighter-card !bg-transparent glass-panel border-white/10 mb-8 overflow-hidden relative"
