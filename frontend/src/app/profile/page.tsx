@@ -24,7 +24,8 @@ export default function ProfilePage() {
     const fetchProfileData = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const res = await fetch('http://localhost:5000/api/progress', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_URL}/api/progress`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -42,7 +43,8 @@ export default function ProfilePage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            await fetch('http://localhost:5000/api/progress/weight', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            await fetch(`${API_URL}/api/progress/weight`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ weight: Number(newWeight) })
@@ -57,7 +59,8 @@ export default function ProfilePage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            await fetch('http://localhost:5000/api/progress/workout', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            await fetch(`${API_URL}/api/progress/workout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ type: workoutType, duration_minutes: Number(workoutDuration) })

@@ -29,7 +29,8 @@ export default function NutritionPage() {
         }
         try {
             const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`http://localhost:5000/api/foods/search?q=${query}`, {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_URL}/api/foods/search?q=${query}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -50,7 +51,8 @@ export default function NutritionPage() {
     const fetchDailyMeals = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const res = await fetch('http://localhost:5000/api/nutrition/daily-meals', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_URL}/api/nutrition/daily-meals`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -68,7 +70,8 @@ export default function NutritionPage() {
         e.preventDefault();
         try {
             const token = localStorage.getItem('fighterToken');
-            const res = await fetch('http://localhost:5000/api/nutrition/meal', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_URL}/api/nutrition/meal`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -118,7 +121,8 @@ export default function NutritionPage() {
                         <h3 className="font-bold text-white">Registrar Comida</h3>
                         <button onClick={async () => {
                             const token = localStorage.getItem('fighterToken');
-                            await fetch('http://localhost:5000/api/foods/seed', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                            await fetch(`${API_URL}/api/foods/seed`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
                             alert('Base de datos inicial de alimentos cargada');
                         }} className="text-[10px] bg-[var(--color-fighter-surface-hover)] px-2 py-1 rounded text-gray-400">
                             + Cargar Base DB

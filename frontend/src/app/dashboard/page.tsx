@@ -24,7 +24,8 @@ export default function DashboardPage() {
             const token = localStorage.getItem('fighterToken');
 
             // Traer Macros
-            const resMacros = await fetch('http://localhost:5000/api/nutrition/calculate', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const resMacros = await fetch(`${API_URL}/api/nutrition/calculate`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (resMacros.ok) {
@@ -33,7 +34,7 @@ export default function DashboardPage() {
             }
 
             // Traer Ayuno Activo
-            const resFast = await fetch('http://localhost:5000/api/fasts/', {
+            const resFast = await fetch(`${API_URL}/api/fasts/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (resFast.ok) {
@@ -51,7 +52,8 @@ export default function DashboardPage() {
     const handleStartFast = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            const res = await fetch('http://localhost:5000/api/fasts/start', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_URL}/api/fasts/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ target_hours: 16 })
@@ -65,7 +67,8 @@ export default function DashboardPage() {
     const handleStopFast = async () => {
         try {
             const token = localStorage.getItem('fighterToken');
-            await fetch('http://localhost:5000/api/fasts/stop', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            await fetch(`${API_URL}/api/fasts/stop`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
