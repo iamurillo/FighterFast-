@@ -20,6 +20,13 @@ export default function NutritionPage() {
 
     const [searchResults, setSearchResults] = useState<any[]>([]);
 
+    const QUICK_TEMPLATES = [
+        { name: "Pechuga con Arroz", cal: 550, p: 45, c: 60, f: 8, type: 'lunch' },
+        { name: "Batido Proteína", cal: 220, p: 30, c: 5, f: 3, type: 'snack' },
+        { name: "Avena y Fruta", cal: 400, p: 12, c: 65, f: 6, type: 'breakfast' },
+        { name: "Salmón y Espárragos", cal: 600, p: 40, c: 10, f: 35, type: 'dinner' }
+    ];
+
     useEffect(() => {
         fetchDailyMeals();
     }, []);
@@ -198,6 +205,37 @@ export default function NutritionPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* QUICK TEMPLATES */}
+            <div className="mb-10">
+                <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Plantillas Rápidas</h2>
+                <div className="grid grid-cols-2 gap-3">
+                    {QUICK_TEMPLATES.map((t, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                db.addMeal({
+                                    name: t.name,
+                                    calories: t.cal,
+                                    protein: t.p,
+                                    carbs: t.c,
+                                    fats: t.f,
+                                    meal_type: t.type
+                                });
+                                fetchDailyMeals();
+                                alert(`${t.name} añadido.`);
+                            }}
+                            className="fighter-card bg-white/5 border-white/5 hover:border-[var(--color-fighter-red)]/30 text-left p-3 flex flex-col gap-1 transition-all active:scale-95 group"
+                        >
+                            <span className="text-[11px] font-black text-white uppercase tracking-tight group-hover:text-[var(--color-fighter-red)]">{t.name}</span>
+                            <div className="flex justify-between items-center opacity-50">
+                                <span className="text-[9px] font-bold text-gray-500">{t.cal} kcal</span>
+                                <Plus className="w-3 h-3 text-[var(--color-fighter-red)]" />
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Daily Totals - Glass Header */}
             <div className="mb-10">

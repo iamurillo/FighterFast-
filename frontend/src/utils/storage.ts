@@ -23,6 +23,14 @@ export const db = {
         }
         return null;
     },
+    getFightDate: () => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('fightDate');
+    },
+    setFightDate: (date: string) => {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('fightDate', date);
+    },
 
     // --- TIMER CONFIGURATIONS ---
     getTimerConfig: () => {
@@ -159,10 +167,16 @@ export const db = {
         return history;
     },
 
-    addWeightLog: (weight: number) => {
+    addWeightLog: (weight: number, bodyFat?: number, muscleMass?: number) => {
         if (typeof window !== 'undefined') {
             const history = JSON.parse(localStorage.getItem('weightHistory') || '[]');
-            const log = { id: Date.now(), weight, date: new Date().toISOString() };
+            const log = {
+                id: Date.now(),
+                weight,
+                bodyFat: bodyFat || null,
+                muscleMass: muscleMass || null,
+                date: new Date().toISOString()
+            };
             history.push(log);
             localStorage.setItem('weightHistory', JSON.stringify(history));
 
@@ -376,7 +390,8 @@ export const db = {
             customFoods: localStorage.getItem('customFoods'),
             diary: localStorage.getItem('trainingDiary'),
             fastState: localStorage.getItem('fastState'),
-            techniques: localStorage.getItem('techniqueVault')
+            techniques: localStorage.getItem('techniqueVault'),
+            fightDate: localStorage.getItem('fightDate')
         };
         return JSON.stringify(backup);
     },
@@ -393,6 +408,7 @@ export const db = {
             if (data.diary) localStorage.setItem('trainingDiary', data.diary);
             if (data.fastState) localStorage.setItem('fastState', data.fastState);
             if (data.techniques) localStorage.setItem('techniqueVault', data.techniques);
+            if (data.fightDate) localStorage.setItem('fightDate', data.fightDate);
             return true;
         } catch (e) {
             console.error("Error al restaurar backup:", e);

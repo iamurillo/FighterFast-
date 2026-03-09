@@ -40,9 +40,11 @@ export default function ProfilePage() {
 
     const handleAddWeight = (e: React.FormEvent) => {
         e.preventDefault();
-        db.addWeightLog(Number(newWeight));
+        db.addWeightLog(Number(newWeight), Number(bodyFat), Number(muscleMass));
         setShowWeightForm(false);
         setNewWeight('');
+        setBodyFat('');
+        setMuscleMass('');
         fetchProfileData();
     };
 
@@ -94,6 +96,9 @@ export default function ProfilePage() {
         };
         reader.readAsText(file);
     };
+
+    const [bodyFat, setBodyFat] = useState<string>('');
+    const [muscleMass, setMuscleMass] = useState<string>('');
 
     const handleResetApp = () => {
         if (confirm('¿ESTÁS SEGURO? Se borrarán todos tus entrenamientos, comidas y registros permanentemente.')) {
@@ -337,6 +342,12 @@ export default function ProfilePage() {
                                     itemStyle={{ fontWeight: '900', color: '#10B981' }}
                                 />
                                 <Area type="monotone" dataKey="weight" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" animationDuration={1500} />
+                                {weightProgressData[0]?.bodyFat && (
+                                    <Area type="monotone" dataKey="bodyFat" stroke="#F59E0B" strokeWidth={2} fill="transparent" />
+                                )}
+                                {weightProgressData[0]?.muscleMass && (
+                                    <Area type="monotone" dataKey="muscleMass" stroke="#3B82F6" strokeWidth={2} fill="transparent" />
+                                )}
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -347,6 +358,63 @@ export default function ProfilePage() {
                         </p>
                     </div>
                 )}
+
+                <div className="mt-6 flex flex-col gap-3">
+                    <input
+                        type="number" step="0.1" placeholder="Peso (kg)"
+                        value={newWeight} onChange={(e) => setNewWeight(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-red-500/50"
+                    />
+                    <div className="flex gap-2">
+                        <input
+                            type="number" step="0.1" placeholder="% Grasa"
+                            value={bodyFat} onChange={(e) => setBodyFat(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-orange-500/50"
+                        />
+                        <input
+                            type="number" step="0.1" placeholder="% Músculo"
+                            value={muscleMass} onChange={(e) => setMuscleMass(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddWeight}
+                        className="w-full bg-[var(--color-fighter-red)] text-white font-black py-4 rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                    >
+                        Registrar Evolución
+                    </button>
+                </div>
+            </div>
+
+            {/* TRAINING HEATMAP SECTION */}
+            <div className="flex items-center gap-2 mb-6 mt-12">
+                <Calendar className="w-5 h-5 text-orange-500" />
+                <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Consistencia (6 Meses)</h2>
+            </div>
+            <div className="fighter-card border-white/5 bg-white/5 p-4 overflow-hidden mb-12">
+                <div className="flex gap-1 overflow-x-auto pb-4 no-scrollbar">
+                    {Array.from({ length: 24 }).map((_, weekIdx) => (
+                        <div key={weekIdx} className="flex flex-col gap-1 shrink-0">
+                            {Array.from({ length: 7 }).map((_, dayIdx) => {
+                                const date = new Date();
+                                date.setDate(date.getDate() - (23 - weekIdx) * 7 - (6 - dayIdx));
+                                const dateStr = date.toISOString().split('T')[0];
+                                const hasActivity = [...data.workouts, ...db.getDailyMeals(dateStr).meals].length > 0;
+                                return (
+                                    <div
+                                        key={dayIdx}
+                                        title={dateStr}
+                                        className={`w-3.5 h-3.5 rounded-sm transition-all duration-500 ${hasActivity ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-white/5'}`}
+                                    />
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+                <div className="flex justify-between mt-2 px-1">
+                    <span className="text-[8px] font-black text-gray-600 uppercase tracking-tighter">Hace 6 meses</span>
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Hoy</span>
+                </div>
             </div>
 
             {/* Combat Analytics Section */}

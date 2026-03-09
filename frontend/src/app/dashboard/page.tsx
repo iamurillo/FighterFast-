@@ -11,6 +11,8 @@ export default function DashboardPage() {
     const [rank, setRank] = useState<any>(null);
     const [streak, setStreak] = useState(0);
     const [quote, setQuote] = useState("");
+    const [fightDate, setFightDate] = useState<string | null>(null);
+    const [daysToFight, setDaysToFight] = useState<number | null>(null);
 
     // Fasting UI State
     const [isFasting, setIsFasting] = useState(false);
@@ -26,7 +28,27 @@ export default function DashboardPage() {
         setRank(db.getFighterRank());
         setStreak(db.getTrainingStreak());
         setQuote(db.getWarriorQuote());
+        const fDate = db.getFightDate();
+        if (fDate) {
+            setFightDate(fDate);
+            calculateDaysToFight(fDate);
+        }
     }, []);
+
+    const calculateDaysToFight = (dateStr: string) => {
+        const target = new Date(dateStr).getTime();
+        const now = new Date().getTime();
+        const diff = target - now;
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        setDaysToFight(days > 0 ? days : 0);
+    };
+
+    const handleSetFightDate = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const date = e.target.value;
+        db.setFightDate(date);
+        setFightDate(date);
+        calculateDaysToFight(date);
+    };
 
     const fetchData = (currentUser?: any) => {
         const activeUser = currentUser || user;
@@ -244,6 +266,61 @@ export default function DashboardPage() {
                     <div className="w-12 h-1 bg-[var(--color-fighter-red)] mt-3 rounded-full"></div>
                 </div>
             </div>
+
+            {/* FIGHT CAMP COUNTDOWN WIDGET */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="fighter-card mb-12 border-orange-500/20 bg-orange-500/5 overflow-hidden"
+            >
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/10 rounded-xl border border-orange-500/20">
+                            <Trophy className="w-5 h-5 text-orange-400" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Fight Camp</p>
+                            <h2 className="text-lg font-black text-white italic uppercase tracking-tighter">Objetivo de Combate</h2>
+                        </div>
+                    </div>
+                    <input
+                        type="date"
+                        onChange={handleSetFightDate}
+                        value={fightDate || ''}
+                        className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none focus:border-orange-500/50"
+                    />
+                </div>
+
+                {fightDate ? (
+                    <div className="flex items-end gap-4">
+                        <div className="flex-1">
+                            <div className="flex justify-between items-end mb-1">
+                                <span className="text-4xl font-black text-white italic tracking-tighter">{daysToFight}</span>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1.5">Días Restantes</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.max(0, Math.min(100, (1 - (daysToFight || 0) / 60) * 100))}%` }}
+                                    className="h-full bg-gradient-to-r from-orange-600 to-orange-400"
+                                />
+                            </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                            <p className="text-[9px] font-bold text-gray-500 uppercase">Estado:</p>
+                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-tighter italic">
+                                {daysToFight && daysToFight <= 7 ? 'Semana de Corte' :
+                                    daysToFight && daysToFight <= 21 ? 'Sparring Duro' :
+                                        daysToFight && daysToFight <= 45 ? 'Volumen/Técnica' : 'Base de Cardio'}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-4">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">Establece una fecha para iniciar tu Campamento</p>
+                    </div>
+                )}
+            </motion.div>
 
             {/* Nutrition Glass Banner */}
             <motion.div
