@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Play } from 'lucide-react';
-import { API_URL } from '@/utils/config';
+import { db } from '@/utils/storage';
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
@@ -12,67 +12,47 @@ export default function DashboardPage() {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('fighterUser');
+        const storedUser = db.getUser();
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            setUser(storedUser);
+            fetchMacrosData(storedUser);
         }
-
-        fetchMacrosData();
     }, []);
 
-    const fetchMacrosData = async () => {
-        try {
-            const token = localStorage.getItem('fighterToken');
+    const fetchMacrosData = (currentUser?: any) => {
+        const activeUser = currentUser || user;
+        if (!activeUser) return;
 
-            // Traer Macros
-            const resMacros = await fetch(`${API_URL}/api/nutrition/calculate`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (resMacros.ok) {
-                const data = await resMacros.json();
-                setMacros(data);
-            }
+        // Traer Macros localmente
+        const calculatedMacros = db.calculateMacros(activeUser);
 
-            // Traer Ayuno Activo
-            const resFast = await fetch(`${API_URL}/api/fasts/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+        // Calcular lo consumido vs lo objetivo
+        const { summary } = db.getDailyMeals();
+
+        if (calculatedMacros) {
+            setMacros({
+                ...calculatedMacros,
+                summary // Consumo real del día
             });
-            if (resFast.ok) {
-                const fastData = await resFast.json();
-                if (fastData.active) {
-                    setIsFasting(true);
-                    // Lógica para setear progreso según start_time omitida por brevedad
-                }
-            }
-        } catch (err) {
-            console.error(err);
+        }
+
+        // Traer Ayuno Activo
+        const fastState = db.getFastState();
+        if (fastState && fastState.active) {
+            setIsFasting(true);
+            // Lógica para progreso omitida
         }
     };
 
-    const handleStartFast = async () => {
-        try {
-            const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`${API_URL}/api/fasts/start`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ target_hours: 16 })
-            });
-            if (res.ok) {
-                setIsFasting(true);
-            }
-        } catch (err) { console.error(err); }
+    const handleStartFast = () => {
+        db.startFast(16);
+        setIsFasting(true);
     };
 
-    const handleStopFast = async () => {
-        try {
-            const token = localStorage.getItem('fighterToken');
-            await fetch(`${API_URL}/api/fasts/stop`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setIsFasting(false);
-            setProgress(0);
-        } catch (err) { console.error(err); }
+    const handleStopFast = () => {
+        db.stopFast();
+        setIsFasting(false);
+        setProgress(0);
     };
 
     const circumference = 2 * Math.PI * 120; // 120 is the radius
@@ -164,17 +144,17 @@ export default function DashboardPage() {
 
                     <div className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] border-t-2 border-t-blue-500">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Proteína</p>
-                        <p className="text-xl font-black text-white">0 / {macros.macros.protein_grams}g</p>
+                        <p className="text-xl font-black text-white">{macros.summary?.protein || 0} / {macros.macros.protein_grams}g</p>
                     </div>
 
                     <div className="bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] border-t-2 border-t-yellow-500">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Grasas</p>
-                        <p className="text-xl font-black text-white">0 / {macros.macros.fat_grams}g</p>
+                        <p className="text-xl font-black text-white">{macros.summary?.fats || 0} / {macros.macros.fat_grams}g</p>
                     </div>
 
                     <div className="col-span-2 bg-[var(--color-fighter-surface)] p-4 rounded-xl border border-[var(--color-fighter-surface-hover)] border-t-2 border-t-green-500">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Carbohidratos</p>
-                        <p className="text-xl font-black text-white">0 / {macros.macros.carbs_grams}g</p>
+                        <p className="text-xl font-black text-white">{macros.summary?.carbs || 0} / {macros.macros.carbs_grams}g</p>
                     </div>
 
                 </div>

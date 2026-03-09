@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, CheckCircle2 } from 'lucide-react';
-import { API_URL } from '@/utils/config';
+import { db } from '@/utils/storage';
 
 export default function NutritionPage() {
     const [dailyData, setDailyData] = useState<any>({ meals: [], summary: { calories: 0, protein: 0, carbs: 0, fats: 0 } });
@@ -22,21 +22,14 @@ export default function NutritionPage() {
         fetchDailyMeals();
     }, []);
 
-    const handleSearchFood = async (query: string) => {
+    const handleSearchFood = (query: string) => {
         setMealName(query);
         if (query.length < 2) {
             setSearchResults([]);
             return;
         }
-        try {
-            const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`${API_URL}/api/foods/search?q=${query}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                setSearchResults(await res.json());
-            }
-        } catch (err) { console.error(err); }
+        const results = db.searchFoods(query);
+        setSearchResults(results);
     };
 
     const selectFood = (food: any) => {
@@ -48,51 +41,26 @@ export default function NutritionPage() {
         setSearchResults([]);
     };
 
-    const fetchDailyMeals = async () => {
-        try {
-            const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`${API_URL}/api/nutrition/daily-meals`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setDailyData(data);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+    const fetchDailyMeals = () => {
+        const data = db.getDailyMeals();
+        setDailyData(data);
+        setLoading(false);
     };
 
-    const handleAddMeal = async (e: React.FormEvent) => {
+    const handleAddMeal = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`${API_URL}/api/nutrition/meal`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    name: mealName,
-                    calories: Number(calories),
-                    protein: Number(protein) || 0,
-                    carbs: Number(carbs) || 0,
-                    fats: Number(fats) || 0,
-                    meal_type: mealType
-                })
-            });
-
-            if (res.ok) {
-                setShowAddForm(false);
-                setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
-                fetchDailyMeals();
-            }
-        } catch (err) {
-            console.error(err);
-        }
+        const newMeal = {
+            name: mealName,
+            calories: Number(calories),
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fats: Number(fats) || 0,
+            meal_type: mealType
+        };
+        db.addMeal(newMeal);
+        setShowAddForm(false);
+        setMealName(''); setCalories(''); setProtein(''); setCarbs(''); setFats('');
+        fetchDailyMeals();
     };
 
     return (
@@ -117,10 +85,8 @@ export default function NutritionPage() {
                 <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-6 animate-in fade-in slide-in-from-top-4 relative">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-white">Registrar Comida</h3>
-                        <button onClick={async () => {
-                            const token = localStorage.getItem('fighterToken');
-                            await fetch(`${API_URL}/api/foods/seed`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                            alert('Base de datos inicial de alimentos cargada');
+                        <button onClick={() => {
+                            alert('Base de datos inicial precargada en caché Offline First.');
                         }} className="text-[10px] bg-[var(--color-fighter-surface-hover)] px-2 py-1 rounded text-gray-400">
                             + Cargar Base DB
                         </button>

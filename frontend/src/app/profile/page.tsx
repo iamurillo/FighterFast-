@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User as UserIcon, LogOut, TrendingDown, Activity, Plus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { API_URL } from '@/utils/config';
-
+import { db } from '@/utils/storage';
 export default function ProfilePage() {
     const router = useRouter();
     const [data, setData] = useState<any>(null);
@@ -22,56 +21,34 @@ export default function ProfilePage() {
         fetchProfileData();
     }, []);
 
-    const fetchProfileData = async () => {
-        try {
-            const token = localStorage.getItem('fighterToken');
-            const res = await fetch(`${API_URL}/api/progress`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const json = await res.json();
-                setData(json);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+    const fetchProfileData = () => {
+        const user = db.getUser();
+        if (!user) return;
+        const weights = db.getWeightHistory();
+        const workouts = db.getWorkoutHistory();
+
+        setData({ user, weights, workouts });
+        setLoading(false);
     };
 
-    const handleAddWeight = async (e: React.FormEvent) => {
+    const handleAddWeight = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const token = localStorage.getItem('fighterToken');
-            await fetch(`${API_URL}/api/progress/weight`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ weight: Number(newWeight) })
-            });
-            setShowWeightForm(false);
-            setNewWeight('');
-            fetchProfileData();
-        } catch (err) { console.error(err); }
+        db.addWeightLog(Number(newWeight));
+        setShowWeightForm(false);
+        setNewWeight('');
+        fetchProfileData();
     };
 
-    const handleAddWorkout = async (e: React.FormEvent) => {
+    const handleAddWorkout = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const token = localStorage.getItem('fighterToken');
-            await fetch(`${API_URL}/api/progress/workout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ type: workoutType, duration_minutes: Number(workoutDuration) })
-            });
-            setShowWorkoutForm(false);
-            setWorkoutDuration('');
-            fetchProfileData();
-        } catch (err) { console.error(err); }
+        db.addWorkoutLog(workoutType, Number(workoutDuration), 'medium');
+        setShowWorkoutForm(false);
+        setWorkoutDuration('');
+        fetchProfileData();
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('fighterToken');
-        localStorage.removeItem('fighterUser');
+        db.clearUser();
         router.push('/login');
     };
 
@@ -124,9 +101,7 @@ export default function ProfilePage() {
                             <LineChart data={[...data.weights].reverse()}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
                                 <XAxis
-                                    dataKey="recorded_at"
-                                    tickFormatter={(val) => new Date(val).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                    stroke="#718096" fontSize={10} tickMargin={10}
+                                    dataKey="date"
                                 />
                                 <YAxis domain={['auto', 'auto']} stroke="#718096" fontSize={10} width={30} />
                                 <Tooltip
@@ -191,7 +166,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div>
                                     <p className="font-bold text-white uppercase text-sm">{w.type}</p>
-                                    <p className="text-xs text-gray-500">{new Date(w.recorded_at).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500">{new Date(w.date).toLocaleDateString()}</p>
                                 </div>
                             </div>
                             <p className="text-lg font-black">{w.duration_minutes} <span className="text-[10px] text-gray-500 uppercase">min</span></p>

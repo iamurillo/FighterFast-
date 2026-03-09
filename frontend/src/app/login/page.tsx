@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Lock, ChevronRight, Activity } from 'lucide-react';
-import { API_URL } from '@/utils/config';
-
+import { db } from '@/utils/storage';
 export default function LoginPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -18,21 +17,17 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Error al iniciar sesión');
+            // Simular validación de login
+            const user = db.getUser();
+            if (!user) {
+                throw new Error('No se encontró ninguna cuenta en este dispositivo. Por favor, regístrate primero.');
+            }
+            if (user.email !== email || user.password !== password) {
+                throw new Error('Correo o contraseña incorrectos');
             }
 
-            // Guardar token y usuario
-            localStorage.setItem('fighterToken', data.token);
-            localStorage.setItem('fighterUser', JSON.stringify(data.user));
+            // Refrescar token local
+            db.saveUser(user);
 
             router.push('/dashboard');
 

@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Activity, User, Lock, Mail, ChevronRight } from 'lucide-react';
-import { API_URL } from '@/utils/config';
-
+import { db } from '@/utils/storage';
 export default function RegisterPage() {
     const router = useRouter();
     const [formData, setFormData] = useState({
@@ -43,20 +42,10 @@ export default function RegisterPage() {
                 training_days: Number(formData.training_days)
             };
 
-            const res = await fetch(`${API_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            // Guardar usuario en localStorage
+            db.saveUser(payload);
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Error en el registro');
-            }
-
-            localStorage.setItem('fighterToken', data.token);
-            localStorage.setItem('fighterUser', JSON.stringify(data.user));
+            router.push('/dashboard');
 
             router.push('/dashboard');
 
