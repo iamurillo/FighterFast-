@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar } from 'lucide-react';
+import { User as UserIcon, LogOut, TrendingDown, Activity, Plus, Download, Upload, Shield, RotateCcw, TrendingUp, ChevronLeft, Calendar, Droplet, Zap, Trophy } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
@@ -18,6 +18,7 @@ export default function ProfilePage() {
     const [showWorkoutForm, setShowWorkoutForm] = useState(false);
     const [workoutType, setWorkoutType] = useState('jiu-jitsu');
     const [workoutDuration, setWorkoutDuration] = useState('');
+    const [streak, setStreak] = useState(0);
 
     useEffect(() => {
         fetchProfileData();
@@ -28,8 +29,10 @@ export default function ProfilePage() {
         if (!user) return;
         const weights = db.getWeightHistory();
         const workouts = db.getWorkoutHistory();
+        const streakVal = db.getTrainingStreak();
 
         setData({ user, weights, workouts });
+        setStreak(streakVal);
         setLoading(false);
     };
 
@@ -121,7 +124,15 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex-1">
-                    <span className="text-[var(--color-fighter-red)] text-[9px] font-black uppercase tracking-[0.3em] mb-1.5 block">V1 Elite Member</span>
+                    <div className="flex items-center gap-2 mb-1.5">
+                        <div
+                            className="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-white/10"
+                            style={{ backgroundColor: db.getFighterRank().bg, color: db.getFighterRank().color }}
+                        >
+                            {db.getFighterRank().name}
+                        </div>
+                        <span className="text-[var(--color-fighter-red)] text-[9px] font-black uppercase tracking-[0.3em]">V1 Elite Member</span>
+                    </div>
                     <h1 className="text-3xl font-black text-white leading-tight uppercase italic">{data.user.name}</h1>
                     <div className="flex items-center gap-2 mt-1">
                         <Activity className="w-3 h-3 text-gray-500" />
@@ -132,6 +143,23 @@ export default function ProfilePage() {
                 <button onClick={handleLogout} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all active:scale-90">
                     <LogOut className="w-5 h-5" />
                 </button>
+            </div>
+
+            {/* Achievements Row - Interesting Thing */}
+            <div className="flex gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar">
+                {[
+                    { label: 'Hidratado', icon: Droplet, count: db.getDailyWater() >= 3500 ? 1 : 0, color: 'text-blue-400' },
+                    { label: 'Ayunador', icon: Zap, count: streak >= 3 ? 1 : 0, color: 'text-emerald-400' },
+                    { label: 'Guerrero', icon: Shield, count: data.workouts.length >= 10 ? 1 : 0, color: 'text-orange-400' },
+                    { label: 'Experto', icon: Trophy, count: db.getFighterRank().name === 'Black Belt' ? 1 : 0, color: 'text-white' }
+                ].map((ach, i) => (
+                    <div key={i} className={`flex flex-col items-center gap-2 min-w-[70px] transition-opacity ${ach.count > 0 ? 'opacity-100' : 'opacity-20'}`}>
+                        <div className={`w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${ach.color}`}>
+                            <ach.icon className="w-6 h-6" />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-tighter text-gray-500">{ach.label}</span>
+                    </div>
+                ))}
             </div>
 
             {/* Target & Current Weight Card - Glass */}

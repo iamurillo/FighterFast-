@@ -8,6 +8,9 @@ import { motion } from 'framer-motion';
 export default function BottomNav() {
     const pathname = usePathname();
 
+    // No mostrar en login, registro o landing
+    if (['/login', '/register', '/'].includes(pathname)) return null;
+
     const navItems = [
         { name: 'Ayuno', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Dieta', path: '/nutrition', icon: Utensils },
@@ -42,8 +45,8 @@ export default function BottomNav() {
                                 )}
 
                                 <Icon className={`w-5 h-5 mb-1 transition-all duration-300 ${isActive
-                                        ? (item.name === 'Fighter' ? 'text-orange-500 scale-110' : 'text-[var(--color-fighter-red)] scale-110')
-                                        : 'text-gray-500 group-hover:text-gray-300'
+                                    ? (item.name === 'Fighter' ? 'text-orange-500 scale-110' : 'text-[var(--color-fighter-red)] scale-110')
+                                    : 'text-gray-500 group-hover:text-gray-300'
                                     }`} />
 
                                 <span className={`text-[8px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${isActive ? 'text-white opacity-100' : 'text-gray-500 opacity-60'

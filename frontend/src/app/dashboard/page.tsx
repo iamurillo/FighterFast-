@@ -8,6 +8,9 @@ export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [macros, setMacros] = useState<any>(null);
     const [water, setWater] = useState(0);
+    const [rank, setRank] = useState<any>(null);
+    const [streak, setStreak] = useState(0);
+    const [quote, setQuote] = useState("");
 
     // Fasting UI State
     const [isFasting, setIsFasting] = useState(false);
@@ -19,6 +22,9 @@ export default function DashboardPage() {
             setUser(storedUser);
             fetchData(storedUser);
         }
+        setRank(db.getFighterRank());
+        setStreak(db.getTrainingStreak());
+        setQuote(db.getWarriorQuote());
     }, []);
 
     const fetchData = (currentUser?: any) => {
@@ -43,11 +49,12 @@ export default function DashboardPage() {
         const fastState = db.getFastState();
         if (fastState && fastState.active) {
             setIsFasting(true);
-            calculateFastProgress(fastState.startTime, fastState.duration);
+            calculateFastProgress(fastState.start_time, fastState.target_hours);
         }
     };
 
-    const calculateFastProgress = (startTime: number, durationHours: number) => {
+    const calculateFastProgress = (startTimeStr: string, durationHours: number) => {
+        const startTime = new Date(startTimeStr).getTime();
         const now = Date.now();
         const elapsed = now - startTime;
         const total = durationHours * 60 * 60 * 1000;
@@ -59,12 +66,14 @@ export default function DashboardPage() {
         db.startFast(16);
         setIsFasting(true);
         setProgress(0);
+        fetchData();
     };
 
     const handleStopFast = () => {
         db.stopFast();
         setIsFasting(false);
         setProgress(0);
+        fetchData();
     };
 
     const handleAddWater = (amount: number) => {
@@ -79,15 +88,33 @@ export default function DashboardPage() {
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="p-6 pb-24 max-w-md mx-auto"
+            className="p-6 pb-32 max-w-md mx-auto"
         >
+            {/* Warrior Quote Context */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                className="mb-8 pt-4 px-4 py-3 bg-[var(--color-fighter-red)]/5 border-l-2 border-[var(--color-fighter-red)] rounded-r-xl"
+            >
+                <p className="text-[10px] font-black italic text-gray-400 uppercase tracking-widest leading-relaxed">
+                    "{quote}"
+                </p>
+            </motion.div>
+
             {/* Header Premium */}
             <motion.div
                 initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                className="flex justify-between items-center mb-10 pt-4"
+                className="flex justify-between items-center mb-10"
             >
                 <div className="flex flex-col">
-                    <span className="text-[var(--color-fighter-red)] text-[10px] font-black uppercase tracking-[0.2em] mb-1">Elite Performance</span>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[var(--color-fighter-red)] text-[10px] font-black uppercase tracking-[0.2em]">Elite Performance</span>
+                        {streak > 0 && (
+                            <div className="flex items-center gap-1 bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-500/30">
+                                <Zap className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                                <span className="text-[8px] font-black text-orange-500">{streak} DÍAS</span>
+                            </div>
+                        )}
+                    </div>
                     <h1 className="text-3xl font-black text-white leading-none">Hola, {user?.name?.split(' ')[0] || 'Atleta'}</h1>
                 </div>
                 <div className="relative group">
@@ -129,7 +156,9 @@ export default function DashboardPage() {
                                     className="flex flex-col items-center"
                                 >
                                     <Zap className="w-6 h-6 text-emerald-400 mb-2 animate-pulse" />
-                                    <p className="text-5xl font-black text-white tracking-tighter mb-1">14:59:02</p>
+                                    <p className="text-5xl font-black text-white tracking-tighter mb-1">
+                                        {Math.floor(progress * 16 / 100)}:{(progress % 1 * 60).toFixed(0).padStart(2, '0')}:02
+                                    </p>
                                     <p className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">Estado: Autofagia</p>
                                 </motion.div>
                             ) : (
@@ -161,23 +190,34 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            {/* Quick Stats Grid */}
+            {/* Quick Stats Grid with Belt Rank */}
             <div className="grid grid-cols-2 gap-4 mb-12">
+                <div
+                    className="fighter-card relative overflow-hidden group border-white/10"
+                    style={{ backgroundColor: rank?.bg ? `${rank.bg}22` : 'transparent' }}
+                >
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Trophy className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Rango Actual</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xl font-black text-white italic uppercase tracking-tighter">{rank?.name || 'Iniciando'}</p>
+                    </div>
+                    <div
+                        className="w-full h-2 mt-3 rounded-full overflow-hidden flex"
+                        style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                        <div className="h-full w-3/4" style={{ backgroundColor: rank?.bg || '#F3F4F6' }}></div>
+                        <div className="h-full w-1/4 bg-black"></div>
+                    </div>
+                </div>
                 <div className="fighter-card relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                         <TrendingUp className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Peso Actual</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Peso</p>
                     <p className="text-3xl font-black text-white">{user?.current_weight || '--'} <span className="text-sm font-normal text-gray-500">kg</span></p>
                     <div className="w-12 h-1 bg-[var(--color-fighter-red)] mt-3 rounded-full"></div>
-                </div>
-                <div className="fighter-card relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Trophy className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Grasa Corporal</p>
-                    <p className="text-3xl font-black text-white">{user?.body_fat || '--'} <span className="text-sm font-normal text-gray-500">%</span></p>
-                    <div className="w-12 h-1 bg-emerald-500 mt-3 rounded-full"></div>
                 </div>
             </div>
 

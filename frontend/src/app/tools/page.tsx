@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -91,8 +91,8 @@ export default function ToolsPage() {
                 <button
                     onClick={() => setActiveTab('diary')}
                     className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'diary'
-                            ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
-                            : 'text-gray-500 hover:text-gray-300'
+                        ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >
                     <BookOpen className="w-4 h-4" /> Diario
@@ -100,8 +100,8 @@ export default function ToolsPage() {
                 <button
                     onClick={() => setActiveTab('calculator')}
                     className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'calculator'
-                            ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
-                            : 'text-gray-500 hover:text-gray-300'
+                        ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >
                     <Scale className="w-4 h-4" /> Corte
@@ -256,10 +256,10 @@ export default function ToolsPage() {
                                     </div>
 
                                     <div className={`p-5 rounded-2xl border-2 ${plan.dangerLevel === 'high'
-                                            ? 'bg-red-500/10 border-red-500/30'
-                                            : plan.dangerLevel === 'medium'
-                                                ? 'bg-orange-500/10 border-orange-500/30'
-                                                : 'bg-emerald-500/10 border-emerald-500/30'
+                                        ? 'bg-red-500/10 border-red-500/30'
+                                        : plan.dangerLevel === 'medium'
+                                            ? 'bg-orange-500/10 border-orange-500/30'
+                                            : 'bg-emerald-500/10 border-emerald-500/30'
                                         }`}>
                                         <div className="flex items-center gap-2 mb-3">
                                             {plan.dangerLevel === 'high' ? <AlertTriangle className="w-5 h-5 text-red-500" /> : <Info className="w-5 h-5 text-blue-400" />}
@@ -273,9 +273,14 @@ export default function ToolsPage() {
                                         </p>
                                     </div>
 
-                                    <p className="mt-4 text-[9px] text-gray-500 font-bold uppercase text-center italic">
-                                        * No intentes cortes extremos sin supervisión médica.
-                                    </p>
+                                    {/* Division Insight */}
+                                    <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">División IBJJF/UFC</p>
+                                            <p className="text-lg font-black text-white italic uppercase tracking-tighter">Peso {db.getWeightClass(Number(currentWeight)).name}</p>
+                                        </div>
+                                        <Trophy className="w-5 h-5 text-orange-500/50" />
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>

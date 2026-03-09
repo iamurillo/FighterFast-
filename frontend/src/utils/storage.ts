@@ -218,6 +218,78 @@ export const db = {
         return null;
     },
 
+    // ---- APEX EDITION FEATURES ----
+
+    getWarriorQuote: () => {
+        const quotes = [
+            "La disciplina es el puente entre las metas y los logros.",
+            "En el tatami no hay excusas, solo resultados.",
+            "Un cinturón negro es un cinturón blanco que nunca se rindió.",
+            "El dolor es temporal, el orgullo de la victoria es para siempre.",
+            "No temas al hombre que ha practicado 10,000 patadas una vez, teme al que ha practicado una 10,000 veces.",
+            "La victoria pertenece al más perseverante.",
+            "Para ser un león, tienes que entrenar con leones."
+        ];
+        return quotes[Math.floor(Math.random() * quotes.length)];
+    },
+
+    getFighterRank: () => {
+        const workouts = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+        const diary = JSON.parse(localStorage.getItem('trainingDiary') || '[]');
+        const total = workouts.length + diary.length;
+
+        if (total >= 100) return { name: "Black Belt", color: "#FFFFFF", bg: "#000000" };
+        if (total >= 50) return { name: "Brown Belt", color: "#FFFFFF", bg: "#4B2C20" };
+        if (total >= 25) return { name: "Purple Belt", color: "#FFFFFF", bg: "#5B21B6" };
+        if (total >= 10) return { name: "Blue Belt", color: "#FFFFFF", bg: "#1E40AF" };
+        return { name: "White Belt", color: "#000000", bg: "#F3F4F6" };
+    },
+
+    getTrainingStreak: () => {
+        const workouts = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+        const diary = JSON.parse(localStorage.getItem('trainingDiary') || '[]');
+        const allDates = [...workouts, ...diary].map(l => l.date.split('T')[0]);
+        const uniqueDates = Array.from(new Set(allDates)).sort().reverse();
+
+        let streak = 0;
+        let today = new Date().toISOString().split('T')[0];
+        let yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        // Si no entrenó hoy ni ayer, racha es 0
+        if (!uniqueDates.includes(today) && !uniqueDates.includes(yesterday)) return 0;
+
+        let checkDate = uniqueDates.includes(today) ? today : yesterday;
+        let checkIdx = uniqueDates.indexOf(checkDate);
+
+        for (let i = checkIdx; i < uniqueDates.length; i++) {
+            const current = new Date(uniqueDates[i]);
+            const next = i + 1 < uniqueDates.length ? new Date(uniqueDates[i + 1]) : null;
+
+            streak++;
+            if (next) {
+                const diffTime = Math.abs(current.getTime() - next.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays > 1) break;
+            }
+        }
+        return streak;
+    },
+
+    getWeightClass: (weight: number) => {
+        const classes = [
+            { name: "Paja", limit: 52.2 },
+            { name: "Mosca", limit: 56.7 },
+            { name: "Gallo", limit: 61.2 },
+            { name: "Pluma", limit: 65.8 },
+            { name: "Ligero", limit: 70.3 },
+            { name: "Wélter", limit: 77.1 },
+            { name: "Medio", limit: 83.9 },
+            { name: "Semipesado", limit: 93.0 },
+            { name: "Pesado", limit: 120.2 }
+        ];
+        return classes.find(c => weight <= c.limit) || { name: "Super Pesado", limit: 999 };
+    },
+
     // ---- DATA MANAGEMENT (BACKUP) ----
     getFullBackup: () => {
         if (typeof window === 'undefined') return "{}";
