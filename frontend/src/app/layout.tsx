@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SWRegistration from "@/components/SWRegistration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   title: "FighterFast - Modo Peleador",
   description: "Ayuno intermitente profesional y registro de entrenamientos",
   manifest: "/manifest.json",
-  themeColor: "#000000"
+  themeColor: "#e11d48",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
 };
 
 export default function RootLayout({
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SWRegistration />
         {children}
       </body>
     </html>
