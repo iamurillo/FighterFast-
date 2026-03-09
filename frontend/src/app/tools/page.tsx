@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -28,27 +28,50 @@ export default function ToolsPage() {
     const [timeLeft, setTimeLeft] = useState(300);
     const [timerActive, setTimerActive] = useState(false);
     const [isResting, setIsResting] = useState(false);
+    const [prepTime, setPrepTime] = useState(10);
+    const [isPrepping, setIsPrepping] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+
+    const playSound = (type: 'bell' | 'warning' | 'prep') => {
+        if (isMuted) return;
+        try {
+            const bellUrl = 'https://actions.google.com/sounds/v1/sports/boxing_bell_mixed.ogg';
+            const beepUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
+            const audio = new Audio(type === 'bell' ? bellUrl : beepUrl);
+            audio.play().catch(() => { });
+        } catch (e) { }
+    };
 
     useEffect(() => {
         let interval: any;
         if (timerActive && timeLeft > 0) {
             interval = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
+                const nextTime = timeLeft - 1;
+                if (nextTime === 10 && !isResting && !isPrepping) playSound('warning');
+                if (nextTime === 3 && isPrepping) playSound('prep');
+                setTimeLeft(nextTime);
             }, 1000);
         } else if (timerActive && timeLeft === 0) {
-            if (!isResting) {
+            if (isPrepping) {
+                setIsPrepping(false);
+                setTimeLeft(roundTime);
+                playSound('bell');
+            } else if (!isResting) {
                 if (currentRound < totalRounds) {
                     setIsResting(true);
                     setTimeLeft(restTime);
-                    // Play hypothetical sound here
+                    playSound('bell');
                 } else {
                     setTimerActive(false);
-                    // Finished
+                    playSound('bell');
+                    playSound('bell');
                 }
             } else {
                 setIsResting(false);
+                setIsPrepping(true);
+                setTimeLeft(10);
                 setCurrentRound((prev) => prev + 1);
-                setTimeLeft(roundTime);
+                playSound('prep');
             }
         }
         return () => clearInterval(interval);
@@ -62,7 +85,11 @@ export default function ToolsPage() {
 
     const handleStartTimer = () => {
         if (!timerActive) {
-            if (timeLeft === 0) setTimeLeft(roundTime);
+            if (timeLeft === roundTime) {
+                setIsPrepping(true);
+                setTimeLeft(10);
+                playSound('prep');
+            }
             setTimerActive(true);
         } else {
             setTimerActive(false);
@@ -72,6 +99,7 @@ export default function ToolsPage() {
     const handleResetTimer = () => {
         setTimerActive(false);
         setIsResting(false);
+        setIsPrepping(false);
         setCurrentRound(1);
         setTimeLeft(roundTime);
     };
@@ -79,6 +107,7 @@ export default function ToolsPage() {
     const setTimerMode = (type: 'BJJ' | 'MMA' | 'BOX') => {
         setTimerActive(false);
         setIsResting(false);
+        setIsPrepping(false);
         setCurrentRound(1);
         if (type === 'BJJ') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(5); }
         if (type === 'MMA') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(3); }
@@ -293,13 +322,28 @@ export default function ToolsPage() {
                         </div>
 
                         {/* Main Display */}
-                        <div className={`fighter-card py-16 text-center border-t-8 transition-colors duration-500 ${isResting ? 'border-t-blue-500 bg-blue-500/5' : 'border-t-[var(--color-fighter-red)] bg-white/5'}`}>
+                        <div className={`fighter-card py-16 text-center border-t-8 transition-colors duration-500 relative ${isResting ? 'border-t-blue-500 bg-blue-500/5' : isPrepping ? 'border-t-yellow-500 bg-yellow-500/5' : 'border-t-[var(--color-fighter-red)] bg-white/5'}`}>
+                            <button
+                                onClick={() => setIsMuted(!isMuted)}
+                                className="absolute top-4 right-4 text-gray-700 hover:text-white transition-colors"
+                            >
+                                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                            </button>
+
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-4">
-                                {isResting ? 'Descanso' : 'Fight!'}
+                                {isResting ? 'Descanso' : isPrepping ? 'Prepárate...' : 'Fight!'}
                             </p>
-                            <h2 className={`text-8xl font-black italic tracking-tighter tabular-nums ${isResting ? 'text-blue-400' : 'text-white'}`}>
+                            <h2 className={`text-8xl font-black italic tracking-tighter tabular-nums ${isResting ? 'text-blue-400' : isPrepping ? 'text-yellow-400' : 'text-white'}`}>
                                 {formatTime(timeLeft)}
                             </h2>
+                            {timeLeft <= 10 && !isResting && !isPrepping && timerActive && (
+                                <motion.div
+                                    animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1 }}
+                                    className="text-[10px] font-black text-[var(--color-fighter-red)] mt-4 uppercase tracking-widest"
+                                >
+                                    ¡Últimos 10 Segundos!
+                                </motion.div>
+                            )}
                         </div>
 
                         {/* Quick Modes */}
@@ -313,6 +357,38 @@ export default function ToolsPage() {
                                     {mode}
                                 </button>
                             ))}
+                        </div>
+
+                        {/* Custom Settings Panel */}
+                        <div className="fighter-card !bg-transparent border-white/5 grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-[8px] font-black text-gray-600 uppercase mb-1 block">Round (min)</label>
+                                <input
+                                    type="number" value={roundTime / 60}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value) * 60;
+                                        setRoundTime(val);
+                                        if (!timerActive) setTimeLeft(val);
+                                    }}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 text-center text-sm font-black text-white outline-none focus:ring-1 focus:ring-[var(--color-fighter-red)]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[8px] font-black text-gray-600 uppercase mb-1 block">Rest (sec)</label>
+                                <input
+                                    type="number" value={restTime}
+                                    onChange={(e) => setRestTime(Number(e.target.value))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 text-center text-sm font-black text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[8px] font-black text-gray-600 uppercase mb-1 block">Rounds</label>
+                                <input
+                                    type="number" value={totalRounds}
+                                    onChange={(e) => setTotalRounds(Number(e.target.value))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 text-center text-sm font-black text-white outline-none focus:ring-1 focus:ring-purple-500"
+                                />
+                            </div>
                         </div>
 
                         {/* Controls */}

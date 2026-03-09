@@ -135,19 +135,16 @@ export default function ProfilePage() {
                     <div className="flex gap-6 items-start relative z-10">
                         {/* Photo/Avatar Section */}
                         <div className="flex flex-col items-center gap-3">
-                            <button
-                                onClick={handleChangeAvatar}
-                                className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 p-1 relative group/avatar"
+                            <div
+                                className="w-24 h-24 rounded-2xl border-4 border-black flex items-center justify-center shadow-2xl overflow-hidden"
+                                style={{ backgroundColor: db.getFighterRank().bg }}
                             >
                                 <img
-                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.avatar_seed || data.user.name}&backgroundColor=transparent`}
+                                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${data.user.name}&backgroundColor=${db.getFighterRank().bg.replace('#', '')}&fontSize=45&fontWeight=900`}
                                     alt="Fighter"
-                                    className="w-full h-full rounded-xl object-cover transition-opacity group-hover/avatar:opacity-40"
+                                    className="w-16 h-16"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                                    <RotateCcw className="w-6 h-6 text-white" />
-                                </div>
-                            </button>
+                            </div>
                             <div
                                 className="w-full py-1 rounded-md text-[7px] font-black uppercase text-center border border-white/10 shadow-lg"
                                 style={{ backgroundColor: db.getFighterRank().bg, color: db.getFighterRank().color }}

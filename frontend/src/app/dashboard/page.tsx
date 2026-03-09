@@ -126,8 +126,15 @@ export default function DashboardPage() {
                 </div>
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] to-orange-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                    <div className="relative w-12 h-12 rounded-full bg-[var(--color-fighter-surface)] border border-white/10 flex justify-center items-center overflow-hidden">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.avatar_seed || user?.name}&backgroundColor=transparent`} alt="Avatar" className="w-10 h-10" />
+                    <div
+                        className="relative w-12 h-12 rounded-full border-2 border-white/10 flex justify-center items-center overflow-hidden shadow-lg"
+                        style={{ backgroundColor: rank?.bg || '#F3F4F6' }}
+                    >
+                        <img
+                            src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'A'}&backgroundColor=${(rank?.bg || 'F3F4F6').replace('#', '')}&fontSize=45&fontWeight=900`}
+                            alt="Avatar"
+                            className="w-8 h-8"
+                        />
                     </div>
                 </div>
             </motion.div>
