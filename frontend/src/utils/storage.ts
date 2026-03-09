@@ -12,6 +12,17 @@ export const db = {
             localStorage.setItem('fighterToken', 'local-token-' + Date.now());
         }
     },
+    updateAvatar: (seed: string) => {
+        if (typeof window !== 'undefined') {
+            const user = db.getUser();
+            if (user) {
+                user.avatar_seed = seed;
+                db.saveUser(user);
+                return user;
+            }
+        }
+        return null;
+    },
     clearUser: () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('fighterUser');
@@ -180,6 +191,16 @@ export const db = {
             const today = new Date().toISOString().split('T')[0];
             const allWater = JSON.parse(localStorage.getItem('waterLogs') || '{}');
             allWater[today] = (allWater[today] || 0) + amount_ml;
+            localStorage.setItem('waterLogs', JSON.stringify(allWater));
+            return allWater[today];
+        }
+        return 0;
+    },
+    subtractWater: (amount_ml: number) => {
+        if (typeof window !== 'undefined') {
+            const today = new Date().toISOString().split('T')[0];
+            const allWater = JSON.parse(localStorage.getItem('waterLogs') || '{}');
+            allWater[today] = Math.max(0, (allWater[today] || 0) - amount_ml);
             localStorage.setItem('waterLogs', JSON.stringify(allWater));
             return allWater[today];
         }

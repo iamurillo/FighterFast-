@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy } from 'lucide-react';
+import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2, AlertTriangle, Info, BookOpen, Trophy, Timer, Play, Pause, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function ToolsPage() {
-    const [activeTab, setActiveTab] = useState<'diary' | 'calculator'>('diary');
+    const [activeTab, setActiveTab] = useState<'diary' | 'calculator' | 'timer'>('diary');
     const [user, setUser] = useState<any>(null);
 
     // --- DIARY STATE ---
@@ -19,6 +19,71 @@ export default function ToolsPage() {
     const [targetKgs, setTargetKgs] = useState('');
     const [daysLeft, setDaysLeft] = useState('7');
     const [plan, setPlan] = useState<any>(null);
+
+    // --- TIMER STATE ---
+    const [roundTime, setRoundTime] = useState(300); // 5 min default
+    const [restTime, setRestTime] = useState(60);   // 1 min rest
+    const [totalRounds, setTotalRounds] = useState(5);
+    const [currentRound, setCurrentRound] = useState(1);
+    const [timeLeft, setTimeLeft] = useState(300);
+    const [timerActive, setTimerActive] = useState(false);
+    const [isResting, setIsResting] = useState(false);
+
+    useEffect(() => {
+        let interval: any;
+        if (timerActive && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timerActive && timeLeft === 0) {
+            if (!isResting) {
+                if (currentRound < totalRounds) {
+                    setIsResting(true);
+                    setTimeLeft(restTime);
+                    // Play hypothetical sound here
+                } else {
+                    setTimerActive(false);
+                    // Finished
+                }
+            } else {
+                setIsResting(false);
+                setCurrentRound((prev) => prev + 1);
+                setTimeLeft(roundTime);
+            }
+        }
+        return () => clearInterval(interval);
+    }, [timerActive, timeLeft, isResting, currentRound, totalRounds, roundTime, restTime]);
+
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    const handleStartTimer = () => {
+        if (!timerActive) {
+            if (timeLeft === 0) setTimeLeft(roundTime);
+            setTimerActive(true);
+        } else {
+            setTimerActive(false);
+        }
+    };
+
+    const handleResetTimer = () => {
+        setTimerActive(false);
+        setIsResting(false);
+        setCurrentRound(1);
+        setTimeLeft(roundTime);
+    };
+
+    const setTimerMode = (type: 'BJJ' | 'MMA' | 'BOX') => {
+        setTimerActive(false);
+        setIsResting(false);
+        setCurrentRound(1);
+        if (type === 'BJJ') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(5); }
+        if (type === 'MMA') { setRoundTime(300); setTimeLeft(300); setRestTime(60); setTotalRounds(3); }
+        if (type === 'BOX') { setRoundTime(180); setTimeLeft(180); setRestTime(60); setTotalRounds(12); }
+    };
 
     useEffect(() => {
         const storedUser = db.getUser();
@@ -90,7 +155,7 @@ export default function ToolsPage() {
             <div className="flex bg-white/5 backdrop-blur-md rounded-2xl p-1.5 mb-8 border border-white/5">
                 <button
                     onClick={() => setActiveTab('diary')}
-                    className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'diary'
+                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'diary'
                         ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
@@ -98,8 +163,17 @@ export default function ToolsPage() {
                     <BookOpen className="w-4 h-4" /> Diario
                 </button>
                 <button
+                    onClick={() => setActiveTab('timer')}
+                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'timer'
+                        ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
+                        : 'text-gray-500 hover:text-gray-300'
+                        }`}
+                >
+                    <Timer className="w-4 h-4" /> Rounds
+                </button>
+                <button
                     onClick={() => setActiveTab('calculator')}
-                    className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'calculator'
+                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'calculator'
                         ? 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
@@ -194,6 +268,70 @@ export default function ToolsPage() {
                     </motion.div>
                 )}
 
+                {/* --- TIMER TAB --- */}
+                {activeTab === 'timer' && (
+                    <motion.div
+                        key="timer"
+                        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                        className="space-y-6"
+                    >
+                        {/* Round Counter */}
+                        <div className="flex justify-around items-center mb-6">
+                            {[1, 2, 3].map((m) => (
+                                <div key={m} className={`flex flex-col items-center opacity-30 ${currentRound === m ? 'opacity-100' : ''}`}>
+                                    <div className={`w-1 h-1 rounded-full mb-1 ${currentRound === m ? 'bg-[var(--color-fighter-red)]' : 'bg-gray-500'}`} />
+                                    <span className="text-[10px] font-black text-gray-400">R{m}</span>
+                                </div>
+                            ))}
+                            <span className="text-sm font-black text-white italic">ROUND {currentRound}/{totalRounds}</span>
+                            {[4, 5, 6].map((m) => (
+                                <div key={m} className={`flex flex-col items-center opacity-30 ${currentRound === m ? 'opacity-100' : ''}`}>
+                                    <div className={`w-1 h-1 rounded-full mb-1 ${currentRound === m ? 'bg-[var(--color-fighter-red)]' : 'bg-gray-500'}`} />
+                                    <span className="text-[10px] font-black text-gray-400">R{m}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Main Display */}
+                        <div className={`fighter-card py-16 text-center border-t-8 transition-colors duration-500 ${isResting ? 'border-t-blue-500 bg-blue-500/5' : 'border-t-[var(--color-fighter-red)] bg-white/5'}`}>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-4">
+                                {isResting ? 'Descanso' : 'Fight!'}
+                            </p>
+                            <h2 className={`text-8xl font-black italic tracking-tighter tabular-nums ${isResting ? 'text-blue-400' : 'text-white'}`}>
+                                {formatTime(timeLeft)}
+                            </h2>
+                        </div>
+
+                        {/* Quick Modes */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {['BJJ', 'MMA', 'BOX'].map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => setTimerMode(mode as any)}
+                                    className="bg-white/5 border border-white/10 text-[10px] font-black py-4 rounded-xl hover:bg-white/10 transition-all uppercase tracking-widest text-gray-400 hover:text-white"
+                                >
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Controls */}
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleResetTimer}
+                                className="flex-1 bg-white/5 border border-white/10 py-5 rounded-2xl flex items-center justify-center text-gray-400 hover:text-white transition-all"
+                            >
+                                <RotateCcw className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={handleStartTimer}
+                                className={`flex-[3] py-5 rounded-2xl flex items-center justify-center shadow-2xl transition-all ${timerActive ? 'bg-white text-black' : 'bg-[var(--color-fighter-red)] text-white shadow-[0_0_30px_rgba(225,29,72,0.4)]'}`}
+                            >
+                                {timerActive ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
                 {/* --- CALCULATOR TAB --- */}
                 {activeTab === 'calculator' && (
                     <motion.div

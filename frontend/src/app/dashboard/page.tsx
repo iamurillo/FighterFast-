@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Play, Droplet, Plus, Zap, TrendingUp, Trophy } from 'lucide-react';
+import { Play, Droplet, Plus, Zap, TrendingUp, Trophy, Utensils, ChevronRight, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
@@ -15,6 +15,7 @@ export default function DashboardPage() {
     // Fasting UI State
     const [isFasting, setIsFasting] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [targetHours, setTargetHours] = useState(16);
 
     useEffect(() => {
         const storedUser = db.getUser();
@@ -49,6 +50,7 @@ export default function DashboardPage() {
         const fastState = db.getFastState();
         if (fastState && fastState.active) {
             setIsFasting(true);
+            setTargetHours(fastState.target_hours);
             calculateFastProgress(fastState.start_time, fastState.target_hours);
         }
     };
@@ -63,7 +65,7 @@ export default function DashboardPage() {
     };
 
     const handleStartFast = () => {
-        db.startFast(16);
+        db.startFast(targetHours);
         setIsFasting(true);
         setProgress(0);
         fetchData();
@@ -78,6 +80,11 @@ export default function DashboardPage() {
 
     const handleAddWater = (amount: number) => {
         const newTotal = db.addWater(amount);
+        setWater(newTotal);
+    };
+
+    const handleSubtractWater = (amount: number) => {
+        const newTotal = db.subtractWater(amount);
         setWater(newTotal);
     };
 
@@ -120,7 +127,7 @@ export default function DashboardPage() {
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] to-orange-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                     <div className="relative w-12 h-12 rounded-full bg-[var(--color-fighter-surface)] border border-white/10 flex justify-center items-center overflow-hidden">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}&backgroundColor=transparent`} alt="Avatar" className="w-10 h-10" />
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.avatar_seed || user?.name}&backgroundColor=transparent`} alt="Avatar" className="w-10 h-10" />
                     </div>
                 </div>
             </motion.div>
@@ -157,9 +164,9 @@ export default function DashboardPage() {
                                 >
                                     <Zap className="w-6 h-6 text-emerald-400 mb-2 animate-pulse" />
                                     <p className="text-5xl font-black text-white tracking-tighter mb-1">
-                                        {Math.floor(progress * 16 / 100)}:{(progress % 1 * 60).toFixed(0).padStart(2, '0')}:02
+                                        {Math.floor((progress * targetHours / 100))}:{((progress * targetHours / 100) % 1 * 60).toFixed(0).padStart(2, '0')}:02
                                     </p>
-                                    <p className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">Estado: Autofagia</p>
+                                    <p className="text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">Meta: {targetHours}H</p>
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -167,7 +174,17 @@ export default function DashboardPage() {
                                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                                     className="flex flex-col items-center"
                                 >
-                                    <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-4">Ventana de Alimentación</p>
+                                    <div className="flex gap-2 mb-4">
+                                        {[16, 18, 20].map(h => (
+                                            <button
+                                                key={h}
+                                                onClick={() => setTargetHours(h)}
+                                                className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${targetHours === h ? 'bg-[var(--color-fighter-red)] text-white' : 'bg-white/5 text-gray-500 hover:text-white'}`}
+                                            >
+                                                {h}H
+                                            </button>
+                                        ))}
+                                    </div>
                                     <button
                                         onClick={handleStartFast}
                                         className="fighter-btn-primary w-20 h-20 !rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(225,29,72,0.3)]"
@@ -222,81 +239,99 @@ export default function DashboardPage() {
             </div>
 
             {/* Nutrition Glass Banner */}
-            <div className="mb-12">
-                <div className="flex justify-between items-end mb-4">
-                    <h2 className="text-xl font-black text-white">Nutrición de Hoy</h2>
-                    <span className="text-xs font-bold text-gray-500">{macros?.current?.calories || 0} / {macros?.target?.calories || 2000} kcal</span>
+            <motion.div
+                whileHover={{ y: -5 }}
+                className="fighter-card mb-12 border-emerald-500/20 bg-emerald-500/5 group"
+            >
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                            <Utensils className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Consumo Diario</p>
+                            <h2 className="text-lg font-black text-white italic uppercase tracking-tighter">Plan Nutricional</h2>
+                        </div>
+                    </div>
+                    <button className="text-emerald-400 group-hover:translate-x-1 transition-transform">
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <div className="fighter-card !bg-transparent glass-panel backdrop-blur-xl border-white/5">
-                    <div className="grid grid-cols-3 gap-6">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-red-400 uppercase tracking-tighter mb-1">Proteína</span>
-                            <div className="flex items-end gap-1">
-                                <span className="text-lg font-black text-white leading-none">{macros?.current?.protein || 0}g</span>
-                                <span className="text-[10px] text-gray-500 mb-0.5">/ {macros?.target?.protein || 0}g</span>
-                            </div>
+                <div className="grid grid-cols-3 gap-6">
+                    <div>
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 opacity-60 text-center">Proteína</p>
+                        <div className="text-center">
+                            <span className="text-base font-black text-white leading-none">{macros?.current?.protein || 0}</span>
+                            <span className="text-[10px] text-gray-600 block">/ {macros?.target?.macros?.protein_grams || 0}g</span>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-tighter mb-1">Carbos</span>
-                            <div className="flex items-end gap-1">
-                                <span className="text-lg font-black text-white leading-none">{macros?.current?.carbs || 0}g</span>
-                                <span className="text-[10px] text-gray-500 mb-0.5">/ {macros?.target?.carbs || 0}g</span>
-                            </div>
+                    </div>
+                    <div>
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 opacity-60 text-center">Carbs</p>
+                        <div className="text-center">
+                            <span className="text-base font-black text-white leading-none">{macros?.current?.carbs || 0}</span>
+                            <span className="text-[10px] text-gray-600 block">/ {macros?.target?.macros?.carbs_grams || 0}g</span>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter mb-1">Grasas</span>
-                            <div className="flex items-end gap-1">
-                                <span className="text-lg font-black text-white leading-none">{macros?.current?.fats || 0}g</span>
-                                <span className="text-[10px] text-gray-500 mb-0.5">/ {macros?.target?.fats || 0}g</span>
-                            </div>
+                    </div>
+                    <div>
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 opacity-60 text-center">Grasas</p>
+                        <div className="text-center">
+                            <span className="text-base font-black text-white leading-none">{macros?.current?.fats || 0}</span>
+                            <span className="text-[10px] text-gray-600 block">/ {macros?.target?.macros?.fat_grams || 0}g</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
-            {/* Premium Water Tracker */}
-            <div className="mb-8">
+            {/* Water Tracker Advanced */}
+            <div className="fighter-card border-blue-500/20 bg-blue-500/5 relative overflow-hidden mb-12">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Droplet className="w-20 h-20 text-blue-500" />
+                </div>
+
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-black text-white">Hidratación</h2>
-                    <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
-                        <Droplet className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
-                        <span className="text-[10px] font-black text-blue-400 uppercase">{waterProgress}%</span>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                            <Droplet className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <h2 className="text-lg font-black text-white italic uppercase tracking-tighter">Hidratación</h2>
+                    </div>
+                    <div className="bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{waterProgress}%</span>
                     </div>
                 </div>
 
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    className="fighter-card relative overflow-hidden group border-blue-500/10"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent pointer-events-none" />
-                    <div className="flex items-center justify-between relative z-10">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center">
-                                <Droplet className={`w-7 h-7 ${waterProgress > 0 ? 'text-blue-400 fill-blue-400 animate-pulse' : 'text-blue-400'}`} />
-                            </div>
-                            <div>
-                                <p className="text-3xl font-black text-white leading-none">{water} <span className="text-xs font-normal text-gray-500 uppercase">ml</span></p>
-                                <p className="text-[10px] font-black text-gray-500 uppercase mt-1">Objetivo: 3500ml</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleAddWater(250)}
-                                className="w-12 h-12 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center transition-all active:scale-90"
-                            >
-                                <Plus className="w-6 h-6 text-blue-400" />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full mt-6 overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${waterProgress}%` }}
-                            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
-                        />
-                    </div>
-                </motion.div>
+                <div className="flex flex-col items-center mb-8">
+                    <p className="text-5xl font-black text-white italic tracking-tighter leading-none mb-1">{(water / 1000).toFixed(1)} <span className="text-lg font-normal text-gray-500 not-italic">L</span></p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Meta: 3.5L</p>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 relative z-10">
+                    <button
+                        onClick={() => handleSubtractWater(250)}
+                        className="bg-red-500/10 border border-red-500/20 h-10 rounded-xl flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all font-black text-lg"
+                    >
+                        <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => handleAddWater(250)}
+                        className="bg-white/5 border border-white/10 h-10 rounded-xl flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black"
+                    >
+                        +250ml
+                    </button>
+                    <button
+                        onClick={() => handleAddWater(500)}
+                        className="bg-white/5 border border-white/10 h-10 rounded-xl flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black"
+                    >
+                        +500ml
+                    </button>
+                    <button
+                        onClick={() => handleAddWater(1000)}
+                        className="bg-blue-500 text-white h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 text-[10px] font-black"
+                    >
+                        +1.0L
+                    </button>
+                </div>
             </div>
         </motion.div>
     );

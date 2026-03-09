@@ -57,6 +57,12 @@ export default function ProfilePage() {
         router.push('/login');
     };
 
+    const handleChangeAvatar = () => {
+        const newSeed = Math.random().toString(36).substring(7);
+        db.updateAvatar(newSeed);
+        fetchProfileData();
+    };
+
     const handleExportData = () => {
         const backup = db.getFullBackup();
         const blob = new Blob([backup], { type: 'application/json' });
@@ -108,42 +114,92 @@ export default function ProfilePage() {
             className="p-6 pb-24 max-w-md mx-auto"
         >
             {/* Header Profile Premium */}
-            <div className="flex items-center gap-6 mb-10 pt-4">
-                <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-                    <div className="relative w-24 h-24 rounded-2xl bg-[var(--color-fighter-surface)] border border-white/10 p-1 bg-clip-border overflow-hidden ring-4 ring-black">
-                        <img
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.name}&backgroundColor=transparent`}
-                            className="w-full h-full rounded-xl"
-                            alt="Avatar"
-                        />
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-6 h-6 rounded-lg border-4 border-black flex items-center justify-center">
-                        <Shield className="w-3 h-3 text-black fill-black" />
-                    </div>
-                </div>
-
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                        <div
-                            className="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-white/10"
-                            style={{ backgroundColor: db.getFighterRank().bg, color: db.getFighterRank().color }}
-                        >
-                            {db.getFighterRank().name}
-                        </div>
-                        <span className="text-[var(--color-fighter-red)] text-[9px] font-black uppercase tracking-[0.3em]">V1 Elite Member</span>
-                    </div>
-                    <h1 className="text-3xl font-black text-white leading-tight uppercase italic">{data.user.name}</h1>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Activity className="w-3 h-3 text-gray-500" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{data.user.training_type}</span>
-                    </div>
-                </div>
-
-                <button onClick={handleLogout} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all active:scale-90">
-                    <LogOut className="w-5 h-5" />
+            {/* Header Profile - Solo Botón de Logout arriba */}
+            <div className="flex justify-end mb-4 pt-4">
+                <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all active:scale-90">
+                    <LogOut className="w-4 h-4" />
                 </button>
             </div>
+
+            {/* Fighter Identity Card - Apex Final */}
+            <motion.div
+                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                className="relative mb-10 group"
+            >
+                <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-fighter-red)] via-orange-500 to-yellow-500 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                <div className="relative bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-6 overflow-hidden shadow-2xl">
+                    {/* Card Background Patterns */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-fighter-red)]/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+
+                    <div className="flex gap-6 items-start relative z-10">
+                        {/* Photo/Avatar Section */}
+                        <div className="flex flex-col items-center gap-3">
+                            <button
+                                onClick={handleChangeAvatar}
+                                className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 p-1 relative group/avatar"
+                            >
+                                <img
+                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.avatar_seed || data.user.name}&backgroundColor=transparent`}
+                                    alt="Fighter"
+                                    className="w-full h-full rounded-xl object-cover transition-opacity group-hover/avatar:opacity-40"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                    <RotateCcw className="w-6 h-6 text-white" />
+                                </div>
+                            </button>
+                            <div
+                                className="w-full py-1 rounded-md text-[7px] font-black uppercase text-center border border-white/10 shadow-lg"
+                                style={{ backgroundColor: db.getFighterRank().bg, color: db.getFighterRank().color }}
+                            >
+                                {db.getFighterRank().name}
+                            </div>
+                        </div>
+
+                        {/* Info Section */}
+                        <div className="flex-1 space-y-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Identidad de Guerrero</p>
+                                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">{data.user.name}</h2>
+                                </div>
+                                <Shield className="w-4 h-4 text-[var(--color-fighter-red)] opacity-50" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                                <div>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">División</p>
+                                    <p className="text-[10px] font-black text-white uppercase italic">{db.getWeightClass(data.user.current_weight).name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Racha</p>
+                                    <div className="flex items-center gap-1">
+                                        <Zap className="w-2 h-2 text-orange-500 fill-orange-500" />
+                                        <p className="text-[10px] font-black text-white uppercase italic">{streak} DÍAS</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Disciplina</p>
+                                    <p className="text-[10px] font-black text-white uppercase italic">{data.user.training_type}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Status</p>
+                                    <p className="text-[10px] font-black text-emerald-400 uppercase italic">Active Duty</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card Footer Decor */}
+                    <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center opacity-40">
+                        <span className="text-[5px] font-mono text-gray-500 uppercase tracking-[0.3em]">FIGHTER-FAST-ID-{Date.now().toString().slice(-8)}</span>
+                        <div className="flex gap-2">
+                            <div className="w-6 h-1 bg-white/20 rounded-full"></div>
+                            <div className="w-3 h-1 bg-[var(--color-fighter-red)] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
 
             {/* Achievements Row - Interesting Thing */}
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar">
@@ -394,6 +450,6 @@ export default function ProfilePage() {
                     ))
                 )}
             </div>
-        </motion.div>
+        </motion.div >
     );
 }
