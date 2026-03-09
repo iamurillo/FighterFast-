@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Dumbbell, Scale, Plus, Calendar, Droplets, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function ToolsPage() {
@@ -73,7 +74,10 @@ export default function ToolsPage() {
     };
 
     return (
-        <div className="p-6 pb-24">
+        <motion.div
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+            className="p-6 pb-24"
+        >
 
             {/* Header */}
             <div className="flex justify-between items-center mb-6 pt-4">
@@ -162,7 +166,7 @@ export default function ToolsPage() {
 
             {/* --- CALCULATOR TAB --- */}
             {activeTab === 'calculator' && (
-                <div className="animate-in fade-in slide-in-from-right-4">
+                <div key="calc-tab" className="animate-in fade-in slide-in-from-right-4">
                     <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)] mb-6">
                         <h2 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
                             <Droplets className="w-4 h-4 text-blue-400" /> Planificador de Corte (Water Cut)
@@ -217,6 +221,6 @@ export default function ToolsPage() {
                     )}
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }

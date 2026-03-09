@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function NutritionPage() {
@@ -77,7 +78,10 @@ export default function NutritionPage() {
     };
 
     return (
-        <div className="p-6">
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="p-6 pb-24"
+        >
 
             {/* Header */}
             <div className="flex justify-between items-center mb-6 pt-4">
@@ -208,6 +212,6 @@ export default function NutritionPage() {
                 )}
             </div>
 
-        </div>
+        </motion.div>
     );
 }

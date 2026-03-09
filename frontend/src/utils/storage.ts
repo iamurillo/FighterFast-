@@ -216,5 +216,39 @@ export const db = {
             return newLog;
         }
         return null;
+    },
+
+    // ---- DATA MANAGEMENT (BACKUP) ----
+    getFullBackup: () => {
+        if (typeof window === 'undefined') return "{}";
+        const backup = {
+            user: localStorage.getItem('fighterUser'),
+            meals: localStorage.getItem('meals'),
+            water: localStorage.getItem('waterLogs'),
+            weight: localStorage.getItem('weightHistory'),
+            workouts: localStorage.getItem('workoutHistory'),
+            customFoods: localStorage.getItem('customFoods'),
+            diary: localStorage.getItem('trainingDiary'),
+            fastState: localStorage.getItem('fastState')
+        };
+        return JSON.stringify(backup);
+    },
+    restoreBackup: (jsonStr: string) => {
+        if (typeof window === 'undefined') return false;
+        try {
+            const data = JSON.parse(jsonStr);
+            if (data.user) localStorage.setItem('fighterUser', data.user);
+            if (data.meals) localStorage.setItem('meals', data.meals);
+            if (data.water) localStorage.setItem('waterLogs', data.water);
+            if (data.weight) localStorage.setItem('weightHistory', data.weight);
+            if (data.workouts) localStorage.setItem('workoutHistory', data.workouts);
+            if (data.customFoods) localStorage.setItem('customFoods', data.customFoods);
+            if (data.diary) localStorage.setItem('trainingDiary', data.diary);
+            if (data.fastState) localStorage.setItem('fastState', data.fastState);
+            return true;
+        } catch (e) {
+            console.error("Error al restaurar backup:", e);
+            return false;
+        }
     }
 };

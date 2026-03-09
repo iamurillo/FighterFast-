@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Play, Droplet, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/utils/storage';
 
 export default function DashboardPage() {
@@ -65,18 +66,24 @@ export default function DashboardPage() {
     const circumference = 2 * Math.PI * 120; // 120 is the radius
 
     return (
-        <div className="p-6">
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="p-6 pb-24"
+        >
 
             {/* Header */}
-            <div className="flex justify-between items-center mb-8 pt-4">
+            <motion.div
+                initial={{ y: -20 }} animate={{ y: 0 }}
+                className="flex justify-between items-center mb-8 pt-4"
+            >
                 <div>
                     <h1 className="text-2xl font-black tracking-tight">Hola, {user?.name?.split(' ')[0] || 'Atleta'}</h1>
                     <p className="text-sm font-medium text-gray-400">Objetivo: {user?.target_weight} kg</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-[var(--color-fighter-surface)] border border-[var(--color-fighter-surface-hover)] flex justify-center items-center">
+                <div className="w-10 h-10 rounded-full bg-[var(--color-fighter-surface)] border border-[var(--color-fighter-surface-hover)] flex justify-center items-center overflow-hidden">
                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}&backgroundColor=transparent`} alt="Avatar" className="w-8 h-8 rounded-full" />
                 </div>
-            </div>
+            </motion.div>
 
             {/* Timer Section */}
             <div className="flex flex-col items-center justify-center mb-10">
@@ -173,7 +180,10 @@ export default function DashboardPage() {
 
             {/* Water Tracker Section */}
             <h2 className="text-lg font-bold mb-4 mt-10">Hidratación (Agua)</h2>
-            <div className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)]">
+            <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-[var(--color-fighter-surface)] p-5 rounded-2xl border border-[var(--color-fighter-surface-hover)]"
+            >
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -210,8 +220,8 @@ export default function DashboardPage() {
                         <span className="text-sm font-bold text-blue-400">500 ml</span>
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
-        </div>
+        </motion.div>
     );
 }
